@@ -138,10 +138,10 @@ const Index = () => {
                 variant="vote"
                 onClick={() => handleVote("hell-yeah")}
                 disabled={hasVoted}
-                className="bg-gradient-to-br from-primary to-primary-glow hover:from-primary/90 hover:to-primary-glow/90 text-primary-foreground flex-col gap-3"
+                className="bg-gradient-to-br from-primary to-primary-glow hover:from-primary/90 hover:to-primary-glow/90 text-primary-foreground flex-col gap-4 min-h-36 py-10 px-10 whitespace-normal text-xl leading-tight"
               >
-                <span className="text-3xl">🔥</span>
-                <span>Hell yeah brother</span>
+                <span className="text-3xl leading-none">🔥</span>
+                <span className="px-1">Hell yeah brother</span>
               </Button>
 
               <Button
