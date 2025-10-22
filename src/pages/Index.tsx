@@ -138,7 +138,7 @@ const Index = () => {
                 variant="vote"
                 onClick={() => handleVote("hell-yeah")}
                 disabled={hasVoted}
-                className="bg-gradient-to-br from-primary to-primary-glow hover:from-primary/90 hover:to-primary-glow/90 text-primary-foreground flex-col gap-4 min-h-36 py-10 px-10 whitespace-normal text-xl leading-tight"
+                className="bg-primary hover:bg-primary/90 text-primary-foreground flex-col gap-4 min-h-36 py-10 px-10 whitespace-normal text-xl leading-tight"
               >
                 <span className="text-3xl leading-none">🔥</span>
                 <span className="px-1">Hell yeah brother</span>
@@ -148,20 +148,20 @@ const Index = () => {
                 variant="vote"
                 onClick={() => handleVote("miss-me")}
                 disabled={hasVoted}
-                className="bg-gradient-to-br from-secondary to-secondary/80 hover:from-secondary/90 hover:to-secondary/70 text-secondary-foreground flex-col gap-3"
+                className="bg-secondary hover:bg-secondary/80 text-secondary-foreground flex-col gap-4 min-h-36 py-10 px-10 whitespace-normal text-xl leading-tight"
               >
-                <span className="text-3xl">🏠</span>
-                <span>Miss me with that office shizz</span>
+                <span className="text-3xl leading-none">🏠</span>
+                <span className="px-1">Miss me with that office shizz</span>
               </Button>
 
               <Button
                 variant="vote"
                 onClick={() => handleVote("only-if-boys")}
                 disabled={hasVoted}
-                className="bg-gradient-to-br from-accent to-accent/80 hover:from-accent/90 hover:to-accent/70 text-accent-foreground flex-col gap-3"
+                className="bg-accent hover:bg-accent/80 text-accent-foreground flex-col gap-4 min-h-36 py-10 px-10 whitespace-normal text-xl leading-tight"
               >
-                <span className="text-3xl">👥</span>
-                <span>Only if my boys are</span>
+                <span className="text-3xl leading-none">👥</span>
+                <span className="px-1">Only if my boys are</span>
               </Button>
             </div>
 
