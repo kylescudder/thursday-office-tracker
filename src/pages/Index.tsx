@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -43,6 +43,22 @@ const Index = () => {
       ],
     },
   ]);
+
+  // Load name from localStorage on mount
+  useEffect(() => {
+    const savedName = localStorage.getItem("thursdayVoteName");
+    if (savedName) {
+      setUserName(savedName);
+    }
+  }, []);
+
+  // Save name to localStorage whenever it changes
+  const handleNameChange = (newName: string) => {
+    setUserName(newName);
+    if (newName.trim()) {
+      localStorage.setItem("thursdayVoteName", newName);
+    }
+  };
 
   const handleVote = (option: VoteOption) => {
     if (!userName.trim()) {
@@ -111,7 +127,7 @@ const Index = () => {
                   id="name"
                   placeholder="Enter your name..."
                   value={userName}
-                  onChange={(e) => setUserName(e.target.value)}
+                  onChange={(e) => handleNameChange(e.target.value)}
                   className="text-lg"
                 />
               </div>
