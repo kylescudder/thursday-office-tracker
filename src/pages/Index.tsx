@@ -125,7 +125,7 @@ const Index = () => {
             <div className="max-w-5xl mx-auto space-y-8">
                 {/* Header */}
                 <div className="text-center space-y-3">
-                    <h1 className="text-5xl sm:text-6xl font-bold bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent">
+                    <h1 className="text-5xl sm:text-6xl p-1 font-bold bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent">
                         Thursday Office Vibes
                     </h1>
                     <p className="text-xl text-muted-foreground">
