@@ -125,7 +125,7 @@ const Index = () => {
             <div className="max-w-5xl mx-auto space-y-8">
                 {/* Header */}
                 <div className="text-center space-y-3">
-                    <h1 className="text-5xl sm:text-6xl p-1 font-bold bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent">
+                    <h1 className="text-5xl sm:text-6xl p-1 font-bold bg-linear-to-r from-primary via-secondary to-accent bg-clip-text text-transparent">
                         Thursday Office Vibes
                     </h1>
                     <p className="text-xl text-muted-foreground">
@@ -134,7 +134,7 @@ const Index = () => {
                 </div>
 
                 {/* Main Voting Card */}
-                <Card className="shadow-[var(--shadow-card)] border-2">
+                <Card className="shadow-(--shadow-card) border-2">
                     <CardHeader>
                         <CardTitle className="text-2xl">Will you be in the office?</CardTitle>
                         <CardDescription>Let the squad know your Thursday plans</CardDescription>

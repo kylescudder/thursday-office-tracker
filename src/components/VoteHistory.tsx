@@ -42,7 +42,7 @@ export function VoteHistory({ weekHistory }: VoteHistoryProps) {
   };
 
   return (
-    <Card className="shadow-[var(--shadow-card)]">
+    <Card className="shadow-(--shadow-card)">
       <CardHeader>
         <CardTitle>Previous Weeks</CardTitle>
       </CardHeader>

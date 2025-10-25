@@ -16,15 +16,15 @@ interface CurrentVotesProps {
 const voteConfig = {
   "hell-yeah": {
     label: "Hell yeah brother 🔥",
-    color: "bg-gradient-to-r from-primary to-primary-glow text-primary-foreground",
+    color: "bg-linear-to-r from-primary to-primary-glow text-primary-foreground",
   },
   "miss-me": {
     label: "Miss me with that 🏠",
-    color: "bg-gradient-to-r from-secondary to-secondary/80 text-secondary-foreground",
+    color: "bg-linear-to-r from-secondary to-secondary/80 text-secondary-foreground",
   },
   "only-if-boys": {
     label: "Only if my boys are 👥",
-    color: "bg-gradient-to-r from-accent to-accent/80 text-accent-foreground",
+    color: "bg-linear-to-r from-accent to-accent/80 text-accent-foreground",
   },
 };
 
@@ -42,7 +42,7 @@ export function CurrentVotes({ votes }: CurrentVotesProps) {
   }, {} as Record<VoteOption, Vote[]>);
 
   return (
-    <Card className="shadow-[var(--shadow-card)]">
+    <Card className="shadow-(--shadow-card)">
       <CardHeader>
         <CardTitle>This Week's Squad</CardTitle>
       </CardHeader>
