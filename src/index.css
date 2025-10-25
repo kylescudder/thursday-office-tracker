@@ -1,4 +1,4 @@
-@import 'tailwindcss';
+@import "tailwindcss";
 
 @plugin 'tailwindcss-animate';
 
@@ -131,9 +131,17 @@ All colors MUST be HSL.
     --ring: 262 83% 58%;
 
     --radius: 1rem;
-    
-    --gradient-primary: linear-gradient(135deg, hsl(262 83% 58%), hsl(220 70% 60%));
-    --gradient-accent: linear-gradient(135deg, hsl(340 85% 65%), hsl(262 83% 58%));
+
+    --gradient-primary: linear-gradient(
+      135deg,
+      hsl(262 83% 58%),
+      hsl(220 70% 60%)
+    );
+    --gradient-accent: linear-gradient(
+      135deg,
+      hsl(340 85% 65%),
+      hsl(262 83% 58%)
+    );
     --shadow-glow: 0 8px 32px -8px hsl(262 83% 58% / 0.3);
     --shadow-card: 0 4px 24px -4px hsl(250 20% 10% / 0.08);
     --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -184,9 +192,17 @@ All colors MUST be HSL.
     --border: 250 20% 20%;
     --input: 250 20% 20%;
     --ring: 262 83% 58%;
-    
-    --gradient-primary: linear-gradient(135deg, hsl(262 83% 58%), hsl(220 70% 55%));
-    --gradient-accent: linear-gradient(135deg, hsl(340 85% 65%), hsl(262 83% 58%));
+
+    --gradient-primary: linear-gradient(
+      135deg,
+      hsl(262 83% 58%),
+      hsl(220 70% 55%)
+    );
+    --gradient-accent: linear-gradient(
+      135deg,
+      hsl(340 85% 65%),
+      hsl(262 83% 58%)
+    );
     --shadow-glow: 0 8px 32px -8px hsl(262 83% 58% / 0.4);
     --shadow-card: 0 4px 24px -4px hsl(0 0% 0% / 0.3);
     --sidebar-background: 240 5.9% 10%;

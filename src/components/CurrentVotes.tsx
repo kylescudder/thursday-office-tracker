@@ -16,11 +16,13 @@ interface CurrentVotesProps {
 const voteConfig = {
   "hell-yeah": {
     label: "Hell yeah brother 🔥",
-    color: "bg-linear-to-r from-primary to-primary-glow text-primary-foreground",
+    color:
+      "bg-linear-to-r from-primary to-primary-glow text-primary-foreground",
   },
   "miss-me": {
     label: "Miss me with that 🏠",
-    color: "bg-linear-to-r from-secondary to-secondary/80 text-secondary-foreground",
+    color:
+      "bg-linear-to-r from-secondary to-secondary/80 text-secondary-foreground",
   },
   "only-if-boys": {
     label: "Only if my boys are 👥",
@@ -33,13 +35,16 @@ export function CurrentVotes({ votes }: CurrentVotesProps) {
     return null;
   }
 
-  const groupedVotes = votes.reduce((acc, vote) => {
-    if (!acc[vote.option]) {
-      acc[vote.option] = [];
-    }
-    acc[vote.option].push(vote);
-    return acc;
-  }, {} as Record<VoteOption, Vote[]>);
+  const groupedVotes = votes.reduce(
+    (acc, vote) => {
+      if (!acc[vote.option]) {
+        acc[vote.option] = [];
+      }
+      acc[vote.option].push(vote);
+      return acc;
+    },
+    {} as Record<VoteOption, Vote[]>,
+  );
 
   return (
     <Card className="shadow-(--shadow-card)">
@@ -58,7 +63,8 @@ export function CurrentVotes({ votes }: CurrentVotesProps) {
                   {voteConfig[option].label}
                 </Badge>
                 <span className="text-sm text-muted-foreground">
-                  {optionVotes.length} {optionVotes.length === 1 ? "person" : "people"}
+                  {optionVotes.length}{" "}
+                  {optionVotes.length === 1 ? "person" : "people"}
                 </span>
               </div>
               <div className="flex flex-wrap gap-2">
