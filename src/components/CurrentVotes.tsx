@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 
-type VoteOption = "hell-yeah" | "miss-me" | "only-if-boys";
+type VoteOption = "yes" | "no" | "could-be-convinced";
 
 interface Vote {
   name: string;
@@ -14,18 +14,18 @@ interface CurrentVotesProps {
 }
 
 const voteConfig = {
-  "hell-yeah": {
-    label: "Hell yeah brother 🔥",
+  yes: {
+    label: "Sign me up 🔥",
     color:
       "bg-linear-to-r from-primary to-primary-glow text-primary-foreground",
   },
-  "miss-me": {
-    label: "Miss me with that 🏠",
+  no: {
+    label: "No thank you 🏠",
     color:
       "bg-linear-to-r from-secondary to-secondary/80 text-secondary-foreground",
   },
-  "only-if-boys": {
-    label: "Only if my boys are 👥",
+  "could-be-convinced": {
+    label: "I could be convinced 👥",
     color: "bg-linear-to-r from-accent to-accent/80 text-accent-foreground",
   },
 };

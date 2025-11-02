@@ -15,7 +15,7 @@ import { toast } from "@/hooks/use-toast";
 import { VoteHistory } from "@/components/VoteHistory";
 import { CurrentVotes } from "@/components/CurrentVotes";
 
-type VoteOption = "hell-yeah" | "miss-me" | "only-if-boys";
+type VoteOption = "yes" | "no" | "could-be-convinced";
 
 const Index = () => {
   const [userName, setUserName] = useState("");
@@ -86,9 +86,9 @@ const Index = () => {
       setHasVoted(true);
 
       const optionText = {
-        "hell-yeah": "Hell yeah brother! 🔥",
-        "miss-me": "Fair enough! 🏠",
-        "only-if-boys": "Only if the squad's in! 👥",
+        yes: "Sign me up! 🔥",
+        no: "No thank you 🏠",
+        "could-be-convinced": "I could be convinced! 👥",
       };
 
       toast({
@@ -168,32 +168,32 @@ const Index = () => {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <Button
                 variant="vote"
-                onClick={() => handleVote("hell-yeah")}
+                onClick={() => handleVote("yes")}
                 disabled={hasVoted}
                 className="bg-primary hover:bg-primary/90 text-primary-foreground flex-col gap-4 min-h-36 py-10 px-10 whitespace-normal text-xl leading-tight"
               >
                 <span className="text-3xl leading-none">🔥</span>
-                <span className="px-1">Hell yeah brother</span>
+                <span className="px-1">Sign me up</span>
               </Button>
 
               <Button
                 variant="vote"
-                onClick={() => handleVote("miss-me")}
+                onClick={() => handleVote("no")}
                 disabled={hasVoted}
                 className="bg-secondary hover:bg-secondary/80 text-secondary-foreground flex-col gap-4 min-h-36 py-10 px-10 whitespace-normal text-xl leading-tight"
               >
                 <span className="text-3xl leading-none">🏠</span>
-                <span className="px-1">Miss me with that office shizz</span>
+                <span className="px-1">No thank you</span>
               </Button>
 
               <Button
                 variant="vote"
-                onClick={() => handleVote("only-if-boys")}
+                onClick={() => handleVote("could-be-convinced")}
                 disabled={hasVoted}
                 className="bg-accent hover:bg-accent/80 text-accent-foreground flex-col gap-4 min-h-36 py-10 px-10 whitespace-normal text-xl leading-tight"
               >
                 <span className="text-3xl leading-none">👥</span>
-                <span className="px-1">Only if my boys are</span>
+                <span className="px-1">I could be convinced</span>
               </Button>
             </div>
 

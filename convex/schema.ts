@@ -5,9 +5,9 @@ export default defineSchema({
   votes: defineTable({
     name: v.string(),
     option: v.union(
-      v.literal("hell-yeah"),
-      v.literal("miss-me"),
-      v.literal("only-if-boys"),
+      v.literal("yes"),
+      v.literal("no"),
+      v.literal("could-be-convinced"),
     ),
     weekStart: v.number(), // Unix timestamp
     timestamp: v.number(), // Unix timestamp

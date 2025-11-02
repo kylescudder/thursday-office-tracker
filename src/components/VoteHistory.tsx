@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 
-type VoteOption = "hell-yeah" | "miss-me" | "only-if-boys";
+type VoteOption = "yes" | "no" | "could-be-convinced";
 
 interface Vote {
   name: string;
@@ -19,15 +19,15 @@ interface VoteHistoryProps {
 }
 
 const voteConfig = {
-  "hell-yeah": {
+  yes: {
     emoji: "🔥",
     color: "bg-primary/10 text-primary border-primary/20",
   },
-  "miss-me": {
+  no: {
     emoji: "🏠",
     color: "bg-secondary/10 text-secondary border-secondary/20",
   },
-  "only-if-boys": {
+  "could-be-convinced": {
     emoji: "👥",
     color: "bg-accent/10 text-accent border-accent/20",
   },
