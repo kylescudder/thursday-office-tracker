@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
-import { useMutation, useQuery } from "convex/react";
-import { api } from "../../convex/_generated/api";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { api, type VoteOption } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -15,17 +15,32 @@ import { toast } from "@/hooks/use-toast";
 import { VoteHistory } from "@/components/VoteHistory";
 import { CurrentVotes } from "@/components/CurrentVotes";
 
-type VoteOption = "yes" | "no" | "could-be-convinced";
-
 const Index = () => {
   const [userName, setUserName] = useState("");
   const [hasVoted, setHasVoted] = useState(false);
 
-  // Convex queries and mutations
-  const currentWeekVotesRaw = useQuery(api.votes.getCurrentWeekVotes);
-  const weekHistoryRaw = useQuery(api.votes.getVoteHistory);
-  const addVote = useMutation(api.votes.addVote);
-  const deleteVote = useMutation(api.votes.deleteVote);
+  // Queries poll so everyone sees new votes without refreshing
+  const queryClient = useQueryClient();
+  const { data: currentWeekVotesRaw } = useQuery({
+    queryKey: ["votes", "current"],
+    queryFn: api.getCurrentWeekVotes,
+    refetchInterval: 5000,
+  });
+  const { data: weekHistoryRaw } = useQuery({
+    queryKey: ["votes", "history"],
+    queryFn: api.getVoteHistory,
+    refetchInterval: 30000,
+  });
+  const onSuccess = () =>
+    queryClient.invalidateQueries({ queryKey: ["votes"] });
+  const { mutateAsync: addVote } = useMutation({
+    mutationFn: api.addVote,
+    onSuccess,
+  });
+  const { mutateAsync: deleteVote } = useMutation({
+    mutationFn: api.deleteVote,
+    onSuccess,
+  });
 
   // Convert timestamps to Date objects
   const currentWeekVotes = useMemo(() => {

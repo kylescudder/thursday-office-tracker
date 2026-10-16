@@ -50,6 +50,19 @@ npm run dev
 - Click on "New codespace" to launch a new Codespace environment.
 - Edit files directly within the Codespace and commit and push your changes once you're done.
 
+## Running locally
+
+The app is a Vite frontend plus a small Bun API server (`server/index.ts`) backed by Postgres. The `votes` table is created automatically on startup.
+
+```sh
+cp .env.example .env   # set DATABASE_URL
+bun install
+bun run dev:server     # API on :3000
+bun run dev            # frontend on :8080, proxies /api to :3000
+```
+
+In production, `bun run build && bun run start` serves both the API and the built frontend from one process.
+
 ## What technologies are used for this project?
 
 This project is built with:
@@ -59,6 +72,7 @@ This project is built with:
 - React
 - shadcn-ui
 - Tailwind CSS
+- Bun + Postgres
 
 ## How can I deploy this project?
 
