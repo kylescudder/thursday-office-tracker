@@ -1,21 +1,11 @@
-import { SQL } from "bun";
+import { sql } from "./database";
 import path from "path";
 
 const VOTE_OPTIONS = ["yes", "no", "could-be-convinced"] as const;
 type VoteOption = (typeof VOTE_OPTIONS)[number];
 
-const sql = new SQL(process.env.DATABASE_URL!);
-
-await sql`
-  CREATE TABLE IF NOT EXISTS votes (
-    id SERIAL PRIMARY KEY,
-    name TEXT NOT NULL,
-    option TEXT NOT NULL CHECK (option IN ('yes', 'no', 'could-be-convinced')),
-    week_start BIGINT NOT NULL, -- Unix timestamp (ms)
-    timestamp BIGINT NOT NULL, -- Unix timestamp (ms)
-    UNIQUE (week_start, name)
-  )
-`;
+// Fail before accepting traffic if the database or migration is unavailable.
+await sql`SELECT id FROM votes LIMIT 0`;
 
 // Get the start of the current week (Monday)
 function getWeekStart(date: Date): number {
@@ -95,6 +85,7 @@ const distDir = path.resolve(import.meta.dir, "../dist");
 const indexHtml = Bun.file(path.join(distDir, "index.html"));
 
 const server = Bun.serve({
+  hostname: "0.0.0.0",
   port: Number(process.env.PORT || 3000),
   routes: {
     "/api/votes/current": {

@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "dev:server": "bun --watch server/index.ts",
+    "db:migrate": "bun server/migrate.ts",
     "build": "vite build",
     "build:dev": "vite build --mode development",
     "lint": "eslint .",

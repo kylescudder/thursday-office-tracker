@@ -1,0 +1,9 @@
+.git
+.env
+.env.*
+!.env.example
+.release.env
+node_modules
+dist
+deploy/state
+*.log

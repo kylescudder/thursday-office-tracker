@@ -52,16 +52,18 @@ npm run dev
 
 ## Running locally
 
-The app is a Vite frontend plus a small Bun API server (`server/index.ts`) backed by Postgres. The `votes` table is created automatically on startup.
+The app is a Vite frontend plus a small Bun API server (`server/index.ts`) backed by Postgres. Run migrations with the schema owner's credentials; the server can then use a restricted runtime role.
 
 ```sh
 cp .env.example .env   # set DATABASE_URL
 bun install
+bun run db:migrate     # create the votes table
 bun run dev:server     # API on :3000
 bun run dev            # frontend on :8080, proxies /api to :3000
 ```
 
 In production, `bun run build && bun run start` serves both the API and the built frontend from one process.
+See [the Herman deployment guide](deploy/README.md) for the container, database and release commands.
 
 ## What technologies are used for this project?
 
