@@ -4,7 +4,8 @@ Every push to `main` runs **Release**. CI checks frontend/server TypeScript,
 ESLint, formatting, database-backed voting behavior, webhook authentication and
 host deployment gates. GitHub builds native AMD64/ARM64 images, publishes an
 immutable GHCR manifest and attests its provenance. The workflow succeeds only
-when the public API reports that commit in `X-Office-Tracker-Revision`.
+when the public API reports that commit in `X-Office-Tracker-Revision` and Herman
+acknowledges the same commit and image digest after completed acceptance checks.
 
 ## Services and trust boundaries
 
@@ -20,7 +21,8 @@ and internal `platform-db`, with no host ports. Its read-only filesystem,
 Weeks use `Europe/London`. Voting keeps its existing open, name-based model.
 
 The receiver joins only `platform-web`, has no Docker socket, host shell
-credentials or database access, and can write only its queue. It checks exact
+credentials or database access, and can write only its queue. It reads only the
+completed release acknowledgement from a separate read-only mount. It checks exact
 paths, HMAC-SHA256 signatures, a five-minute timestamp window, request size and
 queue bounds. Cloudflare Access protects the whole deploy hostname with one
 Service Auth policy allowing only `github-office-tracker-deploy`.
@@ -44,7 +46,13 @@ GitHub, the image, receiver or webhook.
 
 After verifying an image, Herman saves a private pre-deploy `pg_dump`, retains
 the latest 14 dumps, runs owner migrations and waits for application health.
-A failed migration leaves the current app running. Failed application health
+It then checks HTML, built JS/CSS, API revision/cache headers, restricted database
+permissions, voting/updating, history, invalid input and deletion. Each check
+uses a unique temporary vote and removes it, including on failure. Only completed
+checks publish `state/public/deployment.json`; the protected hook GET exposes
+only its revision and immutable image reference. CI requires both that exact
+acknowledgement and the public API revision, preventing an early green release.
+A failed migration leaves the current app running. Failed application acceptance
 restores the previous image. Migrations are not reversed, so schema changes
 must remain compatible with the previous runtime. Success pins the image in
 `.env` and records it in `state/deployment.json` and `state/history.log`.

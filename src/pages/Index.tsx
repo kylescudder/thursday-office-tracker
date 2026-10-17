@@ -148,7 +148,7 @@ const Index = () => {
               Will you be in the office?
             </CardTitle>
             <CardDescription>
-              Let the squad know your Thursday plans
+              Plan Thursday together and see who’s coming in.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
