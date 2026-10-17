@@ -14,7 +14,7 @@ from datetime import datetime, timezone
 ROOT = Path(__file__).resolve().parents[1]
 PLATFORM = ROOT.parents[1]
 STATE = ROOT / "state"
-ENV = ROOT / ".release.env"
+ENV = ROOT / ".env"
 
 
 def run(*args):

@@ -47,7 +47,7 @@ def compose(*args, image=None, output=None):
     if image:
         env['OFFICE_TRACKER_IMAGE'] = image
     return run(['docker', 'compose', '--project-directory', str(APP), '-f', str(APP / 'compose.yaml'),
-                '--env-file', str(APP / '.release.env'), *args], env=env, output=output, timeout=180)
+                '--env-file', str(APP / '.env'), *args], env=env, output=output, timeout=180)
 
 
 def private_env(path):
@@ -112,9 +112,9 @@ def take_request():
 
 
 def pin(image):
-    path = APP / '.release.env'
+    path = APP / '.env'
     lines = [line for line in path.read_text().splitlines() if not line.startswith('OFFICE_TRACKER_IMAGE=')]
-    temp = path.with_name('.release.env.next')
+    temp = path.with_name('.env.next')
     temp.write_text('\n'.join(lines) + f'\nOFFICE_TRACKER_IMAGE={image}\n')
     temp.chmod(0o600)
     temp.replace(path)
@@ -167,7 +167,7 @@ def migrate(candidate):
 def deploy(digest, requested_revision=None):
     if not DIGEST.fullmatch(digest):
         raise Error('Use an exact sha256 digest.')
-    runtime = private_env(APP / '.release.env')
+    runtime = private_env(APP / '.env')
     candidate = f'{IMAGE}@{digest}'
     ids = compose('ps', '-a', '-q', 'web').decode().strip().splitlines()
     if len(ids) > 1:
@@ -212,7 +212,8 @@ def deploy(digest, requested_revision=None):
     stamp = datetime.now(timezone.utc).isoformat()
     with (STATE / 'history.log').open('a') as stream:
         stream.write(f'{stamp} {candidate} {revision}\n')
-    save_json(STATE / 'deployment.json', {'deployed_at':stamp, 'image':candidate, 'revision':revision})
+    save_json(STATE / 'deployment.json', {'deployed_at':stamp, 'image':candidate,
+              'revision':revision, 'previous_image':running})
     log(f'healthy on {candidate}')
 
 

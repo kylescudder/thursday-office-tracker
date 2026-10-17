@@ -47,7 +47,7 @@ the latest 14 dumps, runs owner migrations and waits for application health.
 A failed migration leaves the current app running. Failed application health
 restores the previous image. Migrations are not reversed, so schema changes
 must remain compatible with the previous runtime. Success pins the image in
-`.release.env` and records it in `state/deployment.json` and `state/history.log`.
+`.env` and records it in `state/deployment.json` and `state/history.log`.
 The shared encrypted NAS backup includes private configuration and deployment
 code. Historical Convex votes were not imported; the database started empty.
 The old Netlify project was deleted on 17 October 2026.
@@ -72,7 +72,7 @@ docker compose -f deploy/compose.deploy-hook.yaml --env-file .env.deploy-hook up
 python3 -B deploy/install-launchd.py
 launchctl print gui/501/com.herman.office-tracker-deploy
 tail -n 100 state/deploy.log
-docker compose --env-file .release.env ps
+docker compose --env-file .env ps
 ```
 
 Pause automatic deployment:

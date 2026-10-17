@@ -22,7 +22,7 @@ class Deploy(unittest.TestCase):
                         [('APP','.'),('STATE','state'),('BACKUPS','backups'),('REQUESTS','requests')]]
         for p in self.patches:p.start()
         for d in (module.STATE,module.BACKUPS,module.REQUESTS):d.mkdir()
-        for f in ('.release.env',):
+        for f in ('.env',):
             p=self.app/f;p.write_text('OFFICE_TRACKER_IMAGE=previous\n');p.chmod(0o600)
         self.calls=[]
         self.backup = patch.object(module, 'backup_votes').start()
@@ -115,7 +115,7 @@ class Deploy(unittest.TestCase):
             with self.assertRaises(module.Error):module.deploy(D,R)
             self.assertEqual([c.args[0] for c in start.call_args_list],[module.IMAGE+'@'+D,'previous'])
         self.assertFalse((module.STATE/'history.log').exists())
-        self.assertIn('OFFICE_TRACKER_IMAGE=previous',(self.app/'.release.env').read_text())
+        self.assertIn('OFFICE_TRACKER_IMAGE=previous',(self.app/'.env').read_text())
 
     def test_failed_migration_keeps_the_previous_image_and_does_not_start(self):
         self.migration.side_effect = module.Error('migration rejected')
@@ -123,12 +123,12 @@ class Deploy(unittest.TestCase):
             with self.assertRaises(module.Error):module.deploy(D,R)
             start.assert_not_called()
         self.assertFalse((module.STATE/'history.log').exists())
-        self.assertIn('OFFICE_TRACKER_IMAGE=previous',(self.app/'.release.env').read_text())
+        self.assertIn('OFFICE_TRACKER_IMAGE=previous',(self.app/'.env').read_text())
 
     def test_success_is_pinned_and_new_arrival_remains_queued(self):
         def start(image):self.queue('arriving.json',30)
         with patch.object(module,'run',self.fake_run),patch.object(module,'compose',self.fake_compose),patch.object(module,'start',start):module.deploy(D,R)
-        self.assertIn(module.IMAGE+'@'+D,(self.app/'.release.env').read_text())
+        self.assertIn(module.IMAGE+'@'+D,(self.app/'.env').read_text())
         self.assertTrue((module.STATE/'history.log').exists())
         self.assertTrue((module.REQUESTS/'arriving.json').exists())
 
