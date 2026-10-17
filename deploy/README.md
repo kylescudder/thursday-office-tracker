@@ -59,6 +59,18 @@ must remain compatible with the previous runtime. Success pins the image in
 The shared encrypted NAS backup includes private configuration and deployment
 code. Historical Convex votes were not imported; the database started empty.
 The old Netlify project was deleted on 17 October 2026.
+The retired Convex project `thursday-office-tracker` was also deleted, after a
+full export of its only deployment, `useful-frog-526`, including file storage.
+There was no production deployment. The 32 historical votes remain only in the
+protected archive `secrets/convex-retirement/useful-frog-526-full.zip`; its ZIP
+CRC and inclusion in the decrypted, checksum-verified encrypted NAS backup were
+checked before deletion. They were not imported into Postgres.
+
+pg-view at https://db.kylescudder.co.uk has a saved `Office Tracker` connection
+to `postgres:5432`, database `office_tracker`, user `office_tracker_runtime`,
+with its password saved privately. Use the project owner only for migrations.
+Rollback uses retained Herman image digests and Postgres backups; the deleted
+Netlify/Convex services and historical Netlify DNS target are not rollback paths.
 
 ## Configuration and commands
 
