@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useMemo } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, type VoteOption } from "@/lib/api";
 import { Button } from "@/components/ui/button";
@@ -16,8 +16,9 @@ import { VoteHistory } from "@/components/VoteHistory";
 import { CurrentVotes } from "@/components/CurrentVotes";
 
 const Index = () => {
-  const [userName, setUserName] = useState("");
-  const [hasVoted, setHasVoted] = useState(false);
+  const [userName, setUserName] = useState(
+    () => localStorage.getItem("thursdayVoteName") || "",
+  );
 
   // Queries poll so everyone sees new votes without refreshing
   const queryClient = useQueryClient();
@@ -62,21 +63,7 @@ const Index = () => {
     }));
   }, [weekHistoryRaw]);
 
-  // Load name from localStorage on mount
-  useEffect(() => {
-    const savedName = localStorage.getItem("thursdayVoteName");
-    if (savedName) {
-      setUserName(savedName);
-    }
-  }, []);
-
-  // Check if current user has voted
-  useEffect(() => {
-    if (userName && currentWeekVotes) {
-      const userVote = currentWeekVotes.find((v) => v.name === userName);
-      setHasVoted(!!userVote);
-    }
-  }, [userName, currentWeekVotes]);
+  const hasVoted = currentWeekVotes.some((vote) => vote.name === userName);
 
   // Save name to localStorage whenever it changes
   const handleNameChange = (newName: string) => {
@@ -98,7 +85,6 @@ const Index = () => {
 
     try {
       await addVote({ name: userName, option });
-      setHasVoted(true);
 
       const optionText = {
         yes: "Sign me up! 🔥",
@@ -122,7 +108,6 @@ const Index = () => {
   const handleChangeVote = async () => {
     try {
       await deleteVote({ name: userName });
-      setHasVoted(false);
     } catch (error) {
       toast({
         title: "Error",

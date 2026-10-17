@@ -1,66 +1,105 @@
 # Office tracker on Herman
 
-Public URL: https://office.kylescudder.co.uk
-Checkout: `/Users/kyle/platform/apps/office-tracker`.
-The Vite frontend and Bun API share one process at `office-tracker:3000` on
-`platform-web`. Only the app and PostgreSQL use internal `platform-db`.
-No application or database port is published on Herman.
+Every push to `main` runs **Release**. CI checks frontend/server TypeScript,
+ESLint, formatting, database-backed voting behavior, webhook authentication and
+host deployment gates. GitHub builds native AMD64/ARM64 images, publishes an
+immutable GHCR manifest and attests its provenance. The workflow succeeds only
+when the public API reports that commit in `X-Office-Tracker-Revision`.
 
-The database is `proj_office_tracker`. Provision it once with
+## Services and trust boundaries
+
+- Public app: https://office.kylescudder.co.uk, upstream `office-tracker:3000`.
+- Deploy hook: https://deploy-office.kylescudder.co.uk/hooks/office-tracker.
+- Checkout: `/Users/kyle/platform/apps/office-tracker`.
+- LaunchAgent: `com.herman.office-tracker-deploy`, running as Colima's owner.
+- Image: `ghcr.io/kylescudder/thursday-office-tracker@sha256:<digest>`.
+
+The Vite frontend and Bun API share one non-root container on `platform-web`
+and internal `platform-db`, with no host ports. Its read-only filesystem,
+128 MiB / 0.5 CPU limit, bounded logs and four-connection pool remain in place.
+Weeks use `Europe/London`. Voting keeps its existing open, name-based model.
+
+The receiver joins only `platform-web`, has no Docker socket, host shell
+credentials or database access, and can write only its queue. It checks exact
+paths, HMAC-SHA256 signatures, a five-minute timestamp window, request size and
+queue bounds. Cloudflare Access protects the whole deploy hostname with one
+Service Auth policy allowing only `github-office-tracker-deploy`.
+
+Before sending a deployment, GitHub verifies that Access blocks unauthenticated
+requests, authenticated unrelated paths return 404, and an invalid HMAC reaches
+the receiver but is rejected. Herman independently verifies provenance for
+`kylescudder/thursday-office-tracker`, `.github/workflows/release.yml`,
+`refs/heads/main` and GitHub-hosted runners before pulling the exact digest.
+Deployments are serialized; queued requests coalesce to the newest request.
+
+## Database and recovery
+
+The database is `proj_office_tracker`, registered for weekly encrypted NAS
+backups. Initial provisioning uses
 `python3 /Users/kyle/platform/scripts/provision-project.py office_tracker`.
-The provisioner registers it for the platform's encrypted weekly NAS backups.
-Owner and runtime passwords stay in protected files under
-`/Users/kyle/platform/projects/office_tracker/`; the application receives only
-`runtime-password` as a read-only secret. Never print these files or resolved
-Compose output. Migrations run in a temporary container with the owner role.
+Protected credentials stay in `/Users/kyle/platform/projects/office_tracker/`.
+Only `runtime-password` is mounted into the app. Owner credentials are mounted
+only into the one-shot migration container; database credentials never enter
+GitHub, the image, receiver or webhook.
 
-The app uses four pooled connections and a 128 MiB / 0.5 CPU runtime limit.
-It runs as Herman's non-root UID/GID 501:20 to read the protected mounted secret,
-with a read-only root filesystem, dropped capabilities and bounded logs.
-The Bun base image is pinned by digest in the Dockerfile. The runtime contains
-only the built frontend and server source; frontend dependencies stay in the
-build stage. Weeks follow `Europe/London` time.
+After verifying an image, Herman saves a private pre-deploy `pg_dump`, retains
+the latest 14 dumps, runs owner migrations and waits for application health.
+A failed migration leaves the current app running. Failed application health
+restores the previous image. Migrations are not reversed, so schema changes
+must remain compatible with the previous runtime. Success pins the image in
+`.release.env` and records it in `state/deployment.json` and `state/history.log`.
+The shared encrypted NAS backup includes private configuration and deployment
+code. Historical Convex votes were not imported; the database started empty.
+The old Netlify project was deleted on 17 October 2026.
 
-## Release
+## Configuration and commands
 
-From the checkout, select an immutable release tag, usually the Git commit:
+GitHub's `production` environment permits `main` only, with no required reviewer.
+Its secrets are `DEPLOY_WEBHOOK_SECRET`, `CF_ACCESS_CLIENT_ID` and
+`CF_ACCESS_CLIENT_SECRET`. Repository variables are `DEPLOY_ENABLED=true` and
+`OFFICE_BASE_URL=https://office.kylescudder.co.uk`.
+
+Herman's `.env.deploy-hook`, `secrets/deploy-webhook-secret` and
+`secrets/cloudflare-access.json` are protected files ignored by Git and Docker.
+`state/cloudflare-resources.json` records resource IDs and token expiry. Renew
+the dedicated one-year token before expiry and update both GitHub Access
+secrets together. Never print secrets or resolved Compose output.
+
+From the checkout:
 
 ```sh
-docker build -t office-tracker:<commit> .
-python3 deploy/release.py office-tracker:<commit>
+docker compose -f deploy/compose.deploy-hook.yaml --env-file .env.deploy-hook up -d --wait
+python3 -B deploy/install-launchd.py
+launchctl print gui/501/com.herman.office-tracker-deploy
+tail -n 100 state/deploy.log
 docker compose --env-file .release.env ps
 ```
 
-The script resolves the image tag to its immutable ID, runs the idempotent
-migration with owner credentials, then starts the app with runtime credentials.
-It checks the database-backed API and frontend before recording success in
-`deploy/state/release.json`. A failed startup restores the previous image.
-For a failed initial release it removes only the app, retaining the database.
-Migrations must remain compatible with the previous runtime; schema changes
-are not reversed by an image rollback.
-
-The ignored `.release.env` selects the running image. The release record retains
-the prior selection. To roll back manually, tag that recorded image ID as
-`office-tracker:rollback-<commit>` and pass that tag to `deploy/release.py`.
-Retain previous image IDs; do not prune images during a release.
-GitHub pushes do not deploy automatically.
-
-## Hostname and checks
-
-Register only after the container is healthy, from `/Users/kyle/platform`:
+Pause automatic deployment:
 
 ```sh
-python3 scripts/hostname.py add office-tracker office.kylescudder.co.uk --upstream office-tracker:3000 --dry-run
-python3 scripts/hostname.py add office-tracker office.kylescudder.co.uk --upstream office-tracker:3000
+gh variable set DEPLOY_ENABLED --body false --repo kylescudder/thursday-office-tracker
 ```
 
-Check public HTTPS, the frontend's JS/CSS assets, `/api/votes/current`,
-`/api/votes/history`, vote creation/update/deletion, and persistence after
-restarting only this app. Remove any verification vote afterwards.
-Confirm an existing site still responds. Caddy/Cloudflare handle public TLS.
-Hostname removal retains the container and database.
+Redeploy or roll back to a previously attested main digest:
 
-The tracker keeps its existing open, name-based voting model; there is no login.
-Historical Convex data needs a separate import; this deployment does not delete
-or modify the old service. Host reboot and NAS backup availability follow
-`/Users/kyle/platform/runbook.md`.
+```sh
+./deploy/herman-deploy.sh sha256:<verified-main-digest>
+```
+
+The older `deploy/release.py office-tracker:<local-release>` command remains
+available for operator-built local releases and shares the automatic deployer's
+lock. Prefer attested digests for normal operation. Retain previous images.
+
+Host `deploy/` tooling and Compose changes require a reviewed checkout update,
+receiver recreation or LaunchAgent reinstallation. Routine image releases do
+not execute host scripts downloaded from the image. No self-hosted GitHub
+runner is installed. Colima and Kyle's login session must be running; reboot
+recovery follows `/Users/kyle/platform/runbook.md`.
+
+Access must exist before registering the exact hook route. From the platform:
+
+```sh
+python3 scripts/hostname.py add office-tracker-deploy deploy-office.kylescudder.co.uk --upstream office-tracker-deploy-hook:9000 --path /hooks/office-tracker --dry-run
+python3 scripts/hostname.py add office-tracker-deploy deploy-office.kylescudder.co.uk --upstream office-tracker-deploy-hook:9000 --path /hooks/office-tracker
+```

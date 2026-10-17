@@ -13,7 +13,7 @@ from datetime import datetime, timezone
 
 ROOT = Path(__file__).resolve().parents[1]
 PLATFORM = ROOT.parents[1]
-STATE = ROOT / "deploy/state"
+STATE = ROOT / "state"
 ENV = ROOT / ".release.env"
 
 
@@ -45,7 +45,7 @@ def main():
     if args.image.endswith(":latest"):
         parser.error("Use an immutable release tag")
     STATE.mkdir(parents=True, exist_ok=True)
-    with (STATE / "release.lock").open("w") as lock:
+    with (STATE / "deploy.lock").open("w") as lock:
         fcntl.flock(lock, fcntl.LOCK_EX)
         # Resolve the tag once; Compose and migrations use the same immutable image ID.
         image_id = subprocess.check_output(
