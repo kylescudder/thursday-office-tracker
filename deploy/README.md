@@ -34,7 +34,7 @@ Deployments are serialized; queued requests coalesce to the newest request.
 
 ## Database and recovery
 
-The database is `proj_office_tracker`, registered for weekly encrypted NAS
+The database is `office_tracker`, registered for weekly encrypted NAS
 backups. Initial provisioning uses
 `python3 /Users/kyle/platform/scripts/provision-project.py office_tracker`.
 Protected credentials stay in `/Users/kyle/platform/projects/office_tracker/`.

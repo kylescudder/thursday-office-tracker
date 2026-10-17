@@ -18,7 +18,7 @@ services:
       NODE_ENV: production
       PORT: "3000"
       TZ: Europe/London
-      DATABASE_URL: postgres://proj_office_tracker_runtime@postgres:5432/proj_office_tracker
+      DATABASE_URL: postgres://office_tracker_runtime@postgres:5432/office_tracker
       DATABASE_PASSWORD_FILE: /run/secrets/database_password
     secrets:
       - database_password

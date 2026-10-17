@@ -59,7 +59,7 @@ def main():
             "--network", "platform-db", "--memory", "128m", "--cpus", "0.5",
             "--mount",
             f"type=bind,src={PLATFORM / 'projects/office_tracker/owner-password'},dst=/run/secrets/database_password,readonly",
-            "--env", "DATABASE_URL=postgres://proj_office_tracker_owner@postgres:5432/proj_office_tracker",
+            "--env", "DATABASE_URL=postgres://office_tracker_owner@postgres:5432/office_tracker",
             "--env", "DATABASE_PASSWORD_FILE=/run/secrets/database_password",
             image_id, "bun", "server/migrate.ts",
         )

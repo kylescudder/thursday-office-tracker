@@ -142,7 +142,7 @@ def backup_votes():
     with partial.open('wb') as stream:
         run(['docker', 'compose', '--project-directory', str(APP.parents[1]),
              '-f', str(APP.parents[1] / 'compose.yaml'), 'exec', '-T', '--user',
-             'postgres', 'postgres', 'pg_dump', '-Fc', '-d', 'proj_office_tracker'], output=stream)
+             'postgres', 'postgres', 'pg_dump', '-Fc', '-d', 'office_tracker'], output=stream)
     if partial.stat().st_size == 0:
         raise Error('Pre-deploy database backup was empty.')
     partial.replace(target)
@@ -159,7 +159,7 @@ def migrate(candidate):
          'no-new-privileges:true', '--user', '501:20', '--network', 'platform-db',
          '--memory', '128m', '--cpus', '0.5', '--mount',
          f'type=bind,src={password},dst=/run/secrets/database_password,readonly',
-         '--env', 'DATABASE_URL=postgres://proj_office_tracker_owner@postgres:5432/proj_office_tracker',
+         '--env', 'DATABASE_URL=postgres://office_tracker_owner@postgres:5432/office_tracker',
          '--env', 'DATABASE_PASSWORD_FILE=/run/secrets/database_password',
          candidate, 'bun', 'server/migrate.ts'])
 
