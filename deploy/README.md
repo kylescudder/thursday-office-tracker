@@ -4,7 +4,8 @@ Every push to `main` runs **Release**. CI checks frontend/server TypeScript,
 ESLint, formatting, database-backed voting behavior, webhook authentication and
 host deployment gates. GitHub builds native AMD64/ARM64 images, publishes an
 immutable GHCR manifest and attests its provenance. The workflow succeeds only
-when the public API reports that commit in `X-Office-Tracker-Revision`.
+when the public API reports that commit in `X-Office-Tracker-Revision` and Herman
+acknowledges the same commit and image digest after completed acceptance checks.
 
 ## Services and trust boundaries
 
@@ -20,7 +21,8 @@ and internal `platform-db`, with no host ports. Its read-only filesystem,
 Weeks use `Europe/London`. Voting keeps its existing open, name-based model.
 
 The receiver joins only `platform-web`, has no Docker socket, host shell
-credentials or database access, and can write only its queue. It checks exact
+credentials or database access, and can write only its queue. It reads only the
+completed release acknowledgement from a separate read-only mount. It checks exact
 paths, HMAC-SHA256 signatures, a five-minute timestamp window, request size and
 queue bounds. Cloudflare Access protects the whole deploy hostname with one
 Service Auth policy allowing only `github-office-tracker-deploy`.
@@ -34,7 +36,7 @@ Deployments are serialized; queued requests coalesce to the newest request.
 
 ## Database and recovery
 
-The database is `proj_office_tracker`, registered for weekly encrypted NAS
+The database is `office_tracker`, registered for weekly encrypted NAS
 backups. Initial provisioning uses
 `python3 /Users/kyle/platform/scripts/provision-project.py office_tracker`.
 Protected credentials stay in `/Users/kyle/platform/projects/office_tracker/`.
@@ -44,13 +46,31 @@ GitHub, the image, receiver or webhook.
 
 After verifying an image, Herman saves a private pre-deploy `pg_dump`, retains
 the latest 14 dumps, runs owner migrations and waits for application health.
-A failed migration leaves the current app running. Failed application health
+It then checks HTML, built JS/CSS, API revision/cache headers, restricted database
+permissions, voting/updating, history, invalid input and deletion. Each check
+uses a unique temporary vote and removes it, including on failure. Only completed
+checks publish `state/public/deployment.json`; the protected hook GET exposes
+only its revision and immutable image reference. CI requires both that exact
+acknowledgement and the public API revision, preventing an early green release.
+A failed migration leaves the current app running. Failed application acceptance
 restores the previous image. Migrations are not reversed, so schema changes
 must remain compatible with the previous runtime. Success pins the image in
 `.env` and records it in `state/deployment.json` and `state/history.log`.
 The shared encrypted NAS backup includes private configuration and deployment
 code. Historical Convex votes were not imported; the database started empty.
 The old Netlify project was deleted on 17 October 2026.
+The retired Convex project `thursday-office-tracker` was also deleted, after a
+full export of its only deployment, `useful-frog-526`, including file storage.
+There was no production deployment. The 32 historical votes remain only in the
+protected archive `secrets/convex-retirement/useful-frog-526-full.zip`; its ZIP
+CRC and inclusion in the decrypted, checksum-verified encrypted NAS backup were
+checked before deletion. They were not imported into Postgres.
+
+pg-view at https://db.kylescudder.co.uk has a saved `Office Tracker` connection
+to `postgres:5432`, database `office_tracker`, user `office_tracker_runtime`,
+with its password saved privately. Use the project owner only for migrations.
+Rollback uses retained Herman image digests and Postgres backups; the deleted
+Netlify/Convex services and historical Netlify DNS target are not rollback paths.
 
 ## Configuration and commands
 

@@ -97,6 +97,20 @@ test("restricted runtime can vote, read history and preserve data across restart
     }
 
     await start();
+    const acceptance = Bun.spawn([process.execPath, "deploy/verify.ts"], {
+      env: {
+        ...environment,
+        DATABASE_URL: runtimeUrl.toString(),
+        OFFICE_TRACKER_REVISION: revision,
+        VERIFY_ORIGIN: base,
+      },
+      stdout: "pipe",
+      stderr: "pipe",
+    });
+    expect(await acceptance.exited).toBe(0);
+    const [fixtures] =
+      await owner`SELECT count(*)::int AS count FROM votes WHERE name LIKE 'deployment-check-%'`;
+    expect(fixtures.count).toBe(0);
     const response = await fetch(`${base}/api/votes/current`);
     expect(response.headers.get("X-Office-Tracker-Revision")).toBe(revision);
     expect(response.headers.get("Cache-Control")).toBe("no-store");
