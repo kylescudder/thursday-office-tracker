@@ -78,12 +78,13 @@ This project is built with:
 
 ## How can I deploy this project?
 
-Simply open [Lovable](https://lovable.dev/projects/f1b8576f-8ba9-4674-a7b9-3bead34c851f) and click on Share -> Publish.
+Push changes through a pull request. After CI passes, merging to `main` starts
+the Release workflow, which publishes an attested container image and deploys
+it to Herman. The workflow verifies the live API reports the exact commit.
 
-## Can I connect a custom domain to my Lovable project?
+Production runs at [office.kylescudder.co.uk](https://office.kylescudder.co.uk).
+The frontend and API use one Bun process with a private Postgres database.
+GitHub holds deployment credentials only; database credentials stay on Herman.
 
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+See [the deployment guide](deploy/README.md) for configuration, migration,
+release verification and rollback. The former Netlify project has been removed.
