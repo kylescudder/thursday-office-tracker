@@ -1,0 +1,14 @@
+.git
+.env
+.env.*
+!.env.example
+.release.env
+node_modules
+dist
+deploy/state
+secrets
+state
+backups
+deploy-spool
+__pycache__
+*.log

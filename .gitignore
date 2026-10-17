@@ -24,3 +24,11 @@ dist-ssr
 *.sw?
 
 .env
+.release.env
+deploy/state/
+.env.deploy-hook
+secrets/
+state/
+backups/
+deploy-spool/
+__pycache__/

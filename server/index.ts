@@ -1,21 +1,21 @@
-import { SQL } from "bun";
+import { sql } from "./database";
 import path from "path";
 
 const VOTE_OPTIONS = ["yes", "no", "could-be-convinced"] as const;
 type VoteOption = (typeof VOTE_OPTIONS)[number];
 
-const sql = new SQL(process.env.DATABASE_URL!);
+function json(value: unknown, init?: ResponseInit): Response {
+  const response = Response.json(value, init);
+  response.headers.set(
+    "X-Office-Tracker-Revision",
+    process.env.OFFICE_TRACKER_REVISION || "development",
+  );
+  response.headers.set("Cache-Control", "no-store");
+  return response;
+}
 
-await sql`
-  CREATE TABLE IF NOT EXISTS votes (
-    id SERIAL PRIMARY KEY,
-    name TEXT NOT NULL,
-    option TEXT NOT NULL CHECK (option IN ('yes', 'no', 'could-be-convinced')),
-    week_start BIGINT NOT NULL, -- Unix timestamp (ms)
-    timestamp BIGINT NOT NULL, -- Unix timestamp (ms)
-    UNIQUE (week_start, name)
-  )
-`;
+// Fail before accepting traffic if the database or migration is unavailable.
+await sql`SELECT id FROM votes LIMIT 0`;
 
 // Get the start of the current week (Monday)
 function getWeekStart(date: Date): number {
@@ -95,13 +95,14 @@ const distDir = path.resolve(import.meta.dir, "../dist");
 const indexHtml = Bun.file(path.join(distDir, "index.html"));
 
 const server = Bun.serve({
+  hostname: "0.0.0.0",
   port: Number(process.env.PORT || 3000),
   routes: {
     "/api/votes/current": {
-      GET: async () => Response.json(await getCurrentWeekVotes()),
+      GET: async () => json(await getCurrentWeekVotes()),
     },
     "/api/votes/history": {
-      GET: async () => Response.json(await getVoteHistory()),
+      GET: async () => json(await getVoteHistory()),
     },
     "/api/votes": {
       POST: async (req) => {
@@ -110,17 +111,17 @@ const server = Bun.serve({
           option: VoteOption;
         };
         if (typeof name !== "string" || !name.trim()) {
-          return Response.json({ error: "name is required" }, { status: 400 });
+          return json({ error: "name is required" }, { status: 400 });
         }
         if (!VOTE_OPTIONS.includes(option)) {
-          return Response.json({ error: "invalid option" }, { status: 400 });
+          return json({ error: "invalid option" }, { status: 400 });
         }
-        return Response.json({ id: await addVote(name, option) });
+        return json({ id: await addVote(name, option) });
       },
       DELETE: async (req) => {
         const { name } = (await req.json()) as { name: unknown };
         if (typeof name !== "string") {
-          return Response.json({ error: "name is required" }, { status: 400 });
+          return json({ error: "name is required" }, { status: 400 });
         }
         await deleteVote(name);
         return new Response(null, { status: 204 });

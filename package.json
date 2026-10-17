@@ -6,7 +6,10 @@
   "scripts": {
     "dev": "vite",
     "dev:server": "bun --watch server/index.ts",
+    "db:migrate": "bun server/migrate.ts",
     "build": "vite build",
+    "typecheck": "tsc -p tsconfig.app.json && tsc -p tsconfig.node.json",
+    "test:integration": "bun test server/index.test.ts",
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
     "format": "prettier --write .",

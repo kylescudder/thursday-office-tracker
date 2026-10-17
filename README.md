@@ -52,16 +52,18 @@ npm run dev
 
 ## Running locally
 
-The app is a Vite frontend plus a small Bun API server (`server/index.ts`) backed by Postgres. The `votes` table is created automatically on startup.
+The app is a Vite frontend plus a small Bun API server (`server/index.ts`) backed by Postgres. Run migrations with the schema owner's credentials; the server can then use a restricted runtime role.
 
 ```sh
 cp .env.example .env   # set DATABASE_URL
 bun install
+bun run db:migrate     # create the votes table
 bun run dev:server     # API on :3000
 bun run dev            # frontend on :8080, proxies /api to :3000
 ```
 
 In production, `bun run build && bun run start` serves both the API and the built frontend from one process.
+See [the Herman deployment guide](deploy/README.md) for the container, database and release commands.
 
 ## What technologies are used for this project?
 
@@ -76,12 +78,13 @@ This project is built with:
 
 ## How can I deploy this project?
 
-Simply open [Lovable](https://lovable.dev/projects/f1b8576f-8ba9-4674-a7b9-3bead34c851f) and click on Share -> Publish.
+Push changes through a pull request. After CI passes, merging to `main` starts
+the Release workflow, which publishes an attested container image and deploys
+it to Herman. The workflow verifies the live API reports the exact commit.
 
-## Can I connect a custom domain to my Lovable project?
+Production runs at [office.kylescudder.co.uk](https://office.kylescudder.co.uk).
+The frontend and API use one Bun process with a private Postgres database.
+GitHub holds deployment credentials only; database credentials stay on Herman.
 
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+See [the deployment guide](deploy/README.md) for configuration, migration,
+release verification and rollback. The former Netlify project has been removed.
