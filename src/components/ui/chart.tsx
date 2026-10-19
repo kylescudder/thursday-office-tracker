@@ -104,7 +104,7 @@ const ChartTooltipContent = React.forwardRef<
   HTMLDivElement,
   Partial<
     RechartsPrimitive.TooltipContentProps<
-      number | string | (number | string)[],
+      number | string | readonly (number | string)[],
       number | string
     >
   > &
@@ -195,7 +195,7 @@ const ChartTooltipContent = React.forwardRef<
 
             return (
               <div
-                key={item.dataKey}
+                key={`${key}-${index}`}
                 className={cn(
                   "flex w-full flex-wrap items-stretch gap-2 [&>svg]:h-2.5 [&>svg]:w-2.5 [&>svg]:text-muted-foreground",
                   indicator === "dot" && "items-center",
