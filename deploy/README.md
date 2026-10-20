@@ -14,7 +14,6 @@ are documented in [deploy-core](https://github.com/kylescudder/deploy-core).
 There are no vendored engine files, lock files or sync PRs. Do not install an
 app-specific LaunchAgent. Apply future engine changes once through the central service.
 
-
 Every push to `main` runs **Release**. CI checks frontend/server TypeScript,
 ESLint, formatting, database-backed voting behavior, webhook authentication and
 host deployment gates. GitHub builds native AMD64/ARM64 images, publishes an
