@@ -1,5 +1,19 @@
 # Office tracker on the host
 
+## Shared deployment service
+
+This app is registered as `office-tracker` in the central deployment registry
+`/Users/kyle/platform/deploy-core/apps.json`. LaunchAgent
+`com.kylescudder.deploy-core` runs the single installed engine. Application hooks
+are `deploy/hooks.py`; the receiver, credentials, queues,
+state and database contracts below remain app-specific. Manual deployment uses
+`./deploy/host-deploy.sh sha256:<digest>`.
+
+Engine updates, application registration, failure inspection and service rollback
+are documented in [deploy-core](https://github.com/kylescudder/deploy-core).
+There are no vendored engine files, lock files or sync PRs. Do not install an
+app-specific LaunchAgent. Apply future engine changes once through the central service.
+
 Every push to `main` runs **Release**. CI checks frontend/server TypeScript,
 ESLint, formatting, database-backed voting behavior, webhook authentication and
 host deployment gates. GitHub builds native AMD64/ARM64 images, publishes an
@@ -12,11 +26,8 @@ acknowledges the same commit and image digest after completed acceptance checks.
 - Public app: https://office.kylescudder.co.uk, upstream `office-tracker:3000`.
 - Deploy hook: https://deploy-office.kylescudder.co.uk/hooks/office-tracker.
 - Checkout: `/Users/kyle/platform/apps/office-tracker`.
-- LaunchAgent: `com.kylescudder.office-tracker-deploy`, running as Colima's owner.
-- Deployer: `deploy/host-deploy.py` holds this app's settings and hooks; the
-  shared flow is `deploy/deploy_core.py`, vendored unchanged from
-  `kylescudder/deploy-core` (see `deploy/deploy_core.lock`). Change the core
-  there and sync it; CI fails if the vendored copy is edited here.
+- LaunchAgent: `com.kylescudder.deploy-core`, running as Colima's owner.
+- Deployer: the centrally installed service; application behavior lives in `hooks.py`.
 - Image: `ghcr.io/kylescudder/thursday-office-tracker@sha256:<digest>`.
 
 The Vite frontend and Bun API share one non-root container on `platform-web`
@@ -93,8 +104,7 @@ From the checkout:
 
 ```sh
 docker compose -f deploy/compose.deploy-hook.yaml --env-file .env.deploy-hook up -d --wait
-python3 -B deploy/host-deploy.py --install <host LocalHostName>
-launchctl print gui/501/com.kylescudder.office-tracker-deploy
+launchctl print gui/501/com.kylescudder.deploy-core
 tail -n 100 state/deploy.log
 docker compose --env-file .env ps
 ```
