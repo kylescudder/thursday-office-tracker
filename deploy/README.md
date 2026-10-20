@@ -1,10 +1,10 @@
-# Office tracker on Herman
+# Office tracker on the host
 
 Every push to `main` runs **Release**. CI checks frontend/server TypeScript,
 ESLint, formatting, database-backed voting behavior, webhook authentication and
 host deployment gates. GitHub builds native AMD64/ARM64 images, publishes an
 immutable GHCR manifest and attests its provenance. The workflow succeeds only
-when the public API reports that commit in `X-Office-Tracker-Revision` and Herman
+when the public API reports that commit in `X-Office-Tracker-Revision` and the host
 acknowledges the same commit and image digest after completed acceptance checks.
 
 ## Services and trust boundaries
@@ -12,7 +12,11 @@ acknowledges the same commit and image digest after completed acceptance checks.
 - Public app: https://office.kylescudder.co.uk, upstream `office-tracker:3000`.
 - Deploy hook: https://deploy-office.kylescudder.co.uk/hooks/office-tracker.
 - Checkout: `/Users/kyle/platform/apps/office-tracker`.
-- LaunchAgent: `com.herman.office-tracker-deploy`, running as Colima's owner.
+- LaunchAgent: `com.kylescudder.office-tracker-deploy`, running as Colima's owner.
+- Deployer: `deploy/host-deploy.py` holds this app's settings and hooks; the
+  shared flow is `deploy/deploy_core.py`, vendored unchanged from
+  `kylescudder/deploy-core` (see `deploy/deploy_core.lock`). Change the core
+  there and sync it; CI fails if the vendored copy is edited here.
 - Image: `ghcr.io/kylescudder/thursday-office-tracker@sha256:<digest>`.
 
 The Vite frontend and Bun API share one non-root container on `platform-web`
@@ -29,7 +33,7 @@ Service Auth policy allowing only `github-office-tracker-deploy`.
 
 Before sending a deployment, GitHub verifies that Access blocks unauthenticated
 requests, authenticated unrelated paths return 404, and an invalid HMAC reaches
-the receiver but is rejected. Herman independently verifies provenance for
+the receiver but is rejected. The host independently verifies provenance for
 `kylescudder/thursday-office-tracker`, `.github/workflows/release.yml`,
 `refs/heads/main` and GitHub-hosted runners before pulling the exact digest.
 Deployments are serialized; queued requests coalesce to the newest request.
@@ -44,7 +48,7 @@ Only `runtime-password` is mounted into the app. Owner credentials are mounted
 only into the one-shot migration container; database credentials never enter
 GitHub, the image, receiver or webhook.
 
-After verifying an image, Herman saves a private pre-deploy `pg_dump`, retains
+After verifying an image, the host saves a private pre-deploy `pg_dump`, retains
 the latest 14 dumps, runs owner migrations and waits for application health.
 It then checks HTML, built JS/CSS, API revision/cache headers, restricted database
 permissions, voting/updating, history, invalid input and deletion. Each check
@@ -69,7 +73,7 @@ checked before deletion. They were not imported into Postgres.
 pg-view at https://db.kylescudder.co.uk has a saved `Office Tracker` connection
 to `postgres:5432`, database `office_tracker`, user `office_tracker_runtime`,
 with its password saved privately. Use the project owner only for migrations.
-Rollback uses retained Herman image digests and Postgres backups; the deleted
+Rollback uses retained host image digests and Postgres backups; the deleted
 Netlify/Convex services and historical Netlify DNS target are not rollback paths.
 
 ## Configuration and commands
@@ -79,7 +83,7 @@ Its secrets are `DEPLOY_WEBHOOK_SECRET`, `CF_ACCESS_CLIENT_ID` and
 `CF_ACCESS_CLIENT_SECRET`. Repository variables are `DEPLOY_ENABLED=true` and
 `OFFICE_BASE_URL=https://office.kylescudder.co.uk`.
 
-Herman's `.env.deploy-hook`, `secrets/deploy-webhook-secret` and
+The host's `.env.deploy-hook`, `secrets/deploy-webhook-secret` and
 `secrets/cloudflare-access.json` are protected files ignored by Git and Docker.
 `state/cloudflare-resources.json` records resource IDs and token expiry. Renew
 the dedicated one-year token before expiry and update both GitHub Access
@@ -89,8 +93,8 @@ From the checkout:
 
 ```sh
 docker compose -f deploy/compose.deploy-hook.yaml --env-file .env.deploy-hook up -d --wait
-python3 -B deploy/install-launchd.py
-launchctl print gui/501/com.herman.office-tracker-deploy
+python3 -B deploy/host-deploy.py --install <host LocalHostName>
+launchctl print gui/501/com.kylescudder.office-tracker-deploy
 tail -n 100 state/deploy.log
 docker compose --env-file .env ps
 ```
@@ -104,7 +108,7 @@ gh variable set DEPLOY_ENABLED --body false --repo kylescudder/thursday-office-t
 Redeploy or roll back to a previously attested main digest:
 
 ```sh
-./deploy/herman-deploy.sh sha256:<verified-main-digest>
+./deploy/host-deploy.sh sha256:<verified-main-digest>
 ```
 
 The older `deploy/release.py office-tracker:<local-release>` command remains
