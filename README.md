@@ -63,7 +63,7 @@ bun run dev            # frontend on :8080, proxies /api to :3000
 ```
 
 In production, `bun run build && bun run start` serves both the API and the built frontend from one process.
-See [the Herman deployment guide](deploy/README.md) for the container, database and release commands.
+See [host deployment guide](deploy/README.md) for the container, database and release commands.
 
 ## What technologies are used for this project?
 
@@ -80,11 +80,11 @@ This project is built with:
 
 Push changes through a pull request. After CI passes, merging to `main` starts
 the Release workflow, which publishes an attested container image and deploys
-it to Herman. The workflow verifies the live API reports the exact commit.
+it to the host. The workflow verifies the live API reports the exact commit.
 
 Production runs at [office.kylescudder.co.uk](https://office.kylescudder.co.uk).
 The frontend and API use one Bun process with a private Postgres database.
-GitHub holds deployment credentials only; database credentials stay on Herman.
+GitHub holds deployment credentials only; database credentials stay on the host.
 
 See [the deployment guide](deploy/README.md) for configuration, migration,
 release verification and rollback. The former Netlify project has been removed.
