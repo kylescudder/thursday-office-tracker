@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Office Tracker settings and hooks for the shared host deployer (deploy_core.py)."""
+"""Office Tracker application-owned hooks for the installed deployment service."""
 from pathlib import Path
 
 import deploy_core as core
@@ -31,17 +31,3 @@ def prepare(candidate, current):
     core.backup_database(NAME)
     migrate(candidate)
     core.log('owner migrations applied; runtime remains restricted')
-
-
-APP = core.App(
-    name='office-tracker', title='Office tracker',
-    image='ghcr.io/kylescudder/thursday-office-tracker', repo='kylescudder/thursday-office-tracker',
-    image_var='OFFICE_TRACKER_IMAGE', service='web', app_dir=Path(__file__).resolve().parents[1],
-    health=health,
-    accept=accept,
-    prepare=prepare,
-    public_status=True,
-    backups=True)
-
-if __name__ == '__main__':
-    core.cli(APP, __file__)
