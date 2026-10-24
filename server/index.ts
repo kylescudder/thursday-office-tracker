@@ -98,6 +98,23 @@ const server = Bun.serve({
   hostname: '0.0.0.0',
   port: Number(process.env.PORT || 3000),
   routes: {
+    '/healthz': {
+      GET: async () => {
+        try {
+          // Fail before the server's idle timeout drops the request.
+          await Promise.race([
+            sql`SELECT id FROM votes LIMIT 0`,
+            Bun.sleep(3000).then(() => Promise.reject(new Error('timeout')))
+          ])
+        } catch {
+          return json({ ok: false }, { status: 503 })
+        }
+        return json({
+          ok: true,
+          revision: process.env.OFFICE_TRACKER_REVISION || 'development'
+        })
+      }
+    },
     '/api/votes/current': {
       GET: async () => json(await getCurrentWeekVotes())
     },
