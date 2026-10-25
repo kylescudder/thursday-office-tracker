@@ -32,7 +32,7 @@ services:
           CMD,
           bun,
           -e,
-          "const r = await fetch('http://127.0.0.1:3000/api/votes/current'); if (!r.ok || !Array.isArray(await r.json())) process.exit(1)"
+          "const r = await fetch('http://127.0.0.1:3000/healthz'); if (!r.ok || !(await r.json()).ok) process.exit(1)"
         ]
       interval: 15s
       timeout: 10s

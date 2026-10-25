@@ -41,6 +41,15 @@ try {
   )
     throw new Error('Runtime database role is not restricted')
 
+  const health = await request('/healthz')
+  if (
+    health.headers.get('X-Office-Tracker-Revision') !==
+      process.env.OFFICE_TRACKER_REVISION ||
+    health.headers.get('Cache-Control') !== 'no-store' ||
+    ((await health.json()) as { ok?: unknown }).ok !== true
+  )
+    throw new Error('Health revision/cache headers are incorrect')
+
   const page = await (await request('/')).text()
   if (!page.includes('Thursday Office Vibes'))
     throw new Error('Frontend page is missing')
