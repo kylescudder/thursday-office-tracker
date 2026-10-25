@@ -1,5 +1,4 @@
-ARG BUN_IMAGE=oven/bun@sha256:1d22548f177f4ff38e0c15baa3c2c46c6c2060ba2d1bc573bb4720b407548f1d
-FROM ${BUN_IMAGE} AS build
+FROM oven/bun:1.4.4@sha256:1d22548f177f4ff38e0c15baa3c2c46c6c2060ba2d1bc573bb4720b407548f1d AS build
 WORKDIR /app
 COPY package.json bun.lock ./
 ENV HUSKY=0
@@ -7,7 +6,7 @@ RUN bun install --frozen-lockfile --network-concurrency 8
 COPY . .
 RUN bun run typecheck && bun run lint && bun run build
 
-FROM ${BUN_IMAGE} AS runtime
+FROM oven/bun:1.4.4@sha256:1d22548f177f4ff38e0c15baa3c2c46c6c2060ba2d1bc573bb4720b407548f1d AS runtime
 WORKDIR /app
 ARG OFFICE_TRACKER_REVISION=development
 LABEL org.opencontainers.image.source="https://github.com/kylescudder/thursday-office-tracker" \
