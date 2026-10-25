@@ -63,7 +63,9 @@ After verifying an image, the host saves a private pre-deploy `pg_dump`, retains
 the latest 14 dumps, runs owner migrations and waits for application health.
 It then checks HTML, built JS/CSS, API revision/cache headers, restricted database
 permissions, voting/updating, history, invalid input and deletion. Each check
-uses a unique temporary vote and removes it, including on failure. Only completed
+uses a unique temporary vote and removes it, including on failure. The verifier
+uses one database connection, leaving room within the runtime role's eight-connection
+limit for the four-connection app pool and separate one-connection health probe. Only completed
 checks publish `state/public/deployment.json`; the protected hook GET exposes
 only its revision and immutable image reference. CI requires both that exact
 acknowledgement and the public API revision, preventing an early green release.
