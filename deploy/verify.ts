@@ -1,9 +1,7 @@
-import { SQL } from 'bun'
 import { url } from '../server/database'
+import { createDeploymentDatabase } from './database'
 
-// Share the runtime role's eight-connection budget with the app (4) and health
-// probe (1). These checks run sequentially, so one verifier connection is enough.
-const sql = new SQL(url.toString(), { max: 1, connectionTimeout: 10 })
+const sql = createDeploymentDatabase(url.toString())
 
 const origin = process.env.VERIFY_ORIGIN || 'http://127.0.0.1:3000'
 const name = `deployment-check-${crypto.randomUUID()}`
