@@ -63,7 +63,9 @@ After verifying an image, the host saves a private pre-deploy `pg_dump`, retains
 the latest 14 dumps, runs owner migrations and waits for application health.
 It then checks HTML, built JS/CSS, API revision/cache headers, restricted database
 permissions, voting/updating, history, invalid input and deletion. Each check
-uses a unique temporary vote and removes it, including on failure. Only completed
+uses a unique temporary vote and removes it, including on failure. The verifier
+uses one database connection, leaving room within the runtime role's eight-connection
+limit for the four-connection app pool and separate one-connection health probe. Only completed
 checks publish `state/public/deployment.json`; the protected hook GET exposes
 only its revision and immutable image reference. CI requires both that exact
 acknowledgement and the public API revision, preventing an early green release.
@@ -137,3 +139,17 @@ Access must exist before registering the exact hook route. From the platform:
 python3 scripts/hostname.py add office-tracker-deploy deploy-office.kylescudder.co.uk --upstream office-tracker-deploy-hook:9000 --path /hooks/office-tracker --dry-run
 python3 scripts/hostname.py add office-tracker-deploy deploy-office.kylescudder.co.uk --upstream office-tracker-deploy-hook:9000 --path /hooks/office-tracker
 ```
+
+## Database connection budget
+
+The runtime role is limited to eight PostgreSQL connections. Application work
+uses at most four, health checks at most one, and deployment verification or
+database CLI work at most one. Sequential deployment commands use their own
+one-connection client instead of importing the application pool. This leaves
+two slots for operator connections during a release; owner migrations use a
+separate role.
+
+CI exercises the real deployment client against an eight-connection test role,
+with all four application slots held open. Concurrent deployment queries must
+share one backend, health must still connect, two spare slots must remain usable,
+and a ninth connection must be rejected by PostgreSQL.

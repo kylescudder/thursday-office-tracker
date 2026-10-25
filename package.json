@@ -16,7 +16,8 @@
     "db:migrate": "bun server/migrate.ts",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "prepare": "husky"
+    "prepare": "husky",
+    "test:connections": "bun deploy/test-connection-budget.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "6.0.0",

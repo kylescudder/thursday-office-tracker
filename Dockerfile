@@ -15,7 +15,7 @@ ENV NODE_ENV=production PORT=3000 TZ=Europe/London
 ENV OFFICE_TRACKER_REVISION=${OFFICE_TRACKER_REVISION}
 COPY --from=build --chown=bun:bun /app/dist ./dist
 COPY --chown=bun:bun server/database.ts server/health.ts server/index.ts server/migrate.ts ./server/
-COPY --chown=bun:bun deploy/verify.ts ./deploy/
+COPY --chown=bun:bun deploy/verify.ts deploy/database.ts ./deploy/
 USER bun
 EXPOSE 3000
 CMD ["bun", "server/index.ts"]

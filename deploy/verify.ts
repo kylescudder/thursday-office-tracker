@@ -1,4 +1,7 @@
-import { sql } from '../server/database'
+import { url } from '../server/database'
+import { createDeploymentDatabase } from './database'
+
+const sql = createDeploymentDatabase(url.toString())
 
 const origin = process.env.VERIFY_ORIGIN || 'http://127.0.0.1:3000'
 const name = `deployment-check-${crypto.randomUUID()}`

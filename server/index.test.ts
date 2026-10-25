@@ -80,6 +80,7 @@ test('restricted runtime can vote, read history and preserve data across restart
         CREATE ROLE office_tracker_test_runtime LOGIN;
       END IF;
     END $$`)
+    await owner`ALTER ROLE office_tracker_test_runtime CONNECTION LIMIT 8`
     const migrate = Bun.spawn([process.execPath, 'server/migrate.ts'], {
       env: environment,
       stdout: 'pipe',
@@ -105,6 +106,26 @@ test('restricted runtime can vote, read history and preserve data across restart
     }
 
     await start()
+    // Keep all four app connections open, as they can be under real traffic.
+    let warmup: Promise<Response>[] = []
+    await owner.begin(async (lock) => {
+      await lock`LOCK TABLE votes IN ACCESS EXCLUSIVE MODE`
+      warmup = Array.from({ length: 4 }, () =>
+        fetch(`${base}/api/votes/current`)
+      )
+      const deadline = Date.now() + 3000
+      for (;;) {
+        const [activity] = await owner`SELECT count(*)::int AS active
+          FROM pg_stat_activity WHERE datname = current_database()
+          AND usename = 'office_tracker_test_runtime' AND state = 'active'
+          AND query ILIKE '%SELECT * FROM votes WHERE week_start%'`
+        if (activity.active === 4) break
+        if (Date.now() > deadline) throw new Error('App pool did not fill')
+        await Bun.sleep(25)
+      }
+    })
+    for (const response of await Promise.all(warmup))
+      expect(response.status).toBe(200)
     const acceptance = Bun.spawn([process.execPath, 'deploy/verify.ts'], {
       env: {
         ...environment,
@@ -115,7 +136,10 @@ test('restricted runtime can vote, read history and preserve data across restart
       stdout: 'pipe',
       stderr: 'pipe'
     })
-    expect(await acceptance.exited).toBe(0)
+    const acceptanceExit = await acceptance.exited
+    const acceptanceError = await new Response(acceptance.stderr).text()
+    expect(acceptanceError).toBe('')
+    expect(acceptanceExit).toBe(0)
     const [fixtures] =
       await owner`SELECT count(*)::int AS count FROM votes WHERE name LIKE 'deployment-check-%'`
     expect(fixtures.count).toBe(0)
