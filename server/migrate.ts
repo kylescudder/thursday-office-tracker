@@ -1,4 +1,4 @@
-import { sql } from "./database";
+import { sql } from './database'
 
 try {
   await sql`
@@ -10,8 +10,8 @@ try {
       timestamp BIGINT NOT NULL,
       UNIQUE (week_start, name)
     )
-  `;
-  console.log("Vote schema is ready");
+  `
+  console.log('Vote schema is ready')
 } finally {
-  await sql.close();
+  await sql.close()
 }

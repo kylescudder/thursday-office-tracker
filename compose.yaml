@@ -2,7 +2,7 @@ name: office-tracker
 services:
   web:
     image: ${OFFICE_TRACKER_IMAGE:?Select a release using deploy/release.py}
-    user: "501:20"
+    user: '501:20'
     init: true
     restart: unless-stopped
     read_only: true
@@ -16,7 +16,7 @@ services:
     pids_limit: 128
     environment:
       NODE_ENV: production
-      PORT: "3000"
+      PORT: '3000'
       TZ: Europe/London
       DATABASE_URL: postgres://office_tracker_runtime@postgres:5432/office_tracker
       DATABASE_PASSWORD_FILE: /run/secrets/database_password
@@ -32,7 +32,7 @@ services:
           CMD,
           bun,
           -e,
-          "const r = await fetch('http://127.0.0.1:3000/api/votes/current'); if (!r.ok || !Array.isArray(await r.json())) process.exit(1)",
+          "const r = await fetch('http://127.0.0.1:3000/api/votes/current'); if (!r.ok || !Array.isArray(await r.json())) process.exit(1)"
         ]
       interval: 15s
       timeout: 10s
@@ -42,7 +42,7 @@ services:
       driver: json-file
       options:
         max-size: 10m
-        max-file: "3"
+        max-file: '3'
 secrets:
   database_password:
     file: ../../projects/office_tracker/runtime-password
