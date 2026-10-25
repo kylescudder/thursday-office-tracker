@@ -114,6 +114,32 @@ test('restricted runtime can vote, read history and preserve data across restart
     const response = await fetch(`${base}/api/votes/current`)
     expect(response.headers.get('X-Office-Tracker-Revision')).toBe(revision)
     expect(response.headers.get('Cache-Control')).toBe('no-store')
+    await owner.begin(async (lock) => {
+      await lock`LOCK TABLE votes IN ACCESS EXCLUSIVE MODE`
+      const probes = await Promise.all(
+        Array.from({ length: 8 }, () =>
+          fetch(`${base}/healthz`, { signal: AbortSignal.timeout(4500) })
+        )
+      )
+      for (const probe of probes) {
+        expect(probe.status).toBe(503)
+        expect(await probe.json()).toEqual({ ok: false })
+        expect(probe.headers.get('Cache-Control')).toBe('no-store')
+        expect(probe.headers.get('X-Office-Tracker-Revision')).toBe(revision)
+      }
+      const deadline = Date.now() + 1500
+      for (;;) {
+        const [activity] =
+          await owner`SELECT count(*)::int AS active FROM pg_stat_activity
+          WHERE datname = current_database() AND usename = 'office_tracker_test_runtime'
+          AND state = 'active' AND query ILIKE '%SELECT id FROM votes LIMIT 0%'`
+        if (activity.active === 0) break
+        if (Date.now() > deadline)
+          throw new Error('Health probe SQL outlived its deadline')
+        await Bun.sleep(25)
+      }
+    })
+    expect((await fetch(`${base}/healthz`)).status).toBe(200)
     const html = await (await fetch(base)).text()
     const assets = [...html.matchAll(/(?:src|href)="([^"]+\.(?:js|css))"/g)]
     expect(assets.length).toBeGreaterThanOrEqual(2)

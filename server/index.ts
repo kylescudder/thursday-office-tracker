@@ -93,6 +93,7 @@ async function deleteVote(name: string) {
 
 const distDir = path.resolve(import.meta.dir, '../dist')
 const indexHtml = Bun.file(path.join(distDir, 'index.html'))
+let healthProbe: Promise<unknown> | undefined
 
 const server = Bun.serve({
   hostname: '0.0.0.0',
@@ -100,14 +101,27 @@ const server = Bun.serve({
   routes: {
     '/healthz': {
       GET: async () => {
+        healthProbe ??= sql
+          .begin(async (probe) => {
+            await probe`SET LOCAL statement_timeout = '3s'`
+            await probe`SELECT id FROM votes LIMIT 0`
+          })
+          .finally(() => {
+            healthProbe = undefined
+          })
+        let timer: ReturnType<typeof setTimeout> | undefined
         try {
           // Fail before the server's idle timeout drops the request.
           await Promise.race([
-            sql`SELECT id FROM votes LIMIT 0`,
-            Bun.sleep(3000).then(() => Promise.reject(new Error('timeout')))
+            healthProbe,
+            new Promise<never>((_, reject) => {
+              timer = setTimeout(() => reject(new Error('timeout')), 3000)
+            })
           ])
         } catch {
           return json({ ok: false }, { status: 503 })
+        } finally {
+          clearTimeout(timer)
         }
         return json({
           ok: true,
