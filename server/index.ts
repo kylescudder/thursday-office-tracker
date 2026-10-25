@@ -1,4 +1,5 @@
-import { sql } from './database'
+import { sql, url } from './database'
+import { createHealthCheck } from './health'
 import path from 'path'
 
 const VOTE_OPTIONS = ['yes', 'no', 'could-be-convinced'] as const
@@ -93,6 +94,7 @@ async function deleteVote(name: string) {
 
 const distDir = path.resolve(import.meta.dir, '../dist')
 const indexHtml = Bun.file(path.join(distDir, 'index.html'))
+const checkHealth = createHealthCheck(url.toString())
 
 const server = Bun.serve({
   hostname: '0.0.0.0',
@@ -101,11 +103,7 @@ const server = Bun.serve({
     '/healthz': {
       GET: async () => {
         try {
-          // Fail before the server's idle timeout drops the request.
-          await Promise.race([
-            sql`SELECT id FROM votes LIMIT 0`,
-            Bun.sleep(3000).then(() => Promise.reject(new Error('timeout')))
-          ])
+          await checkHealth()
         } catch {
           return json({ ok: false }, { status: 503 })
         }

@@ -1,5 +1,6 @@
 import { expect, test } from 'bun:test'
 import { SQL } from 'bun'
+import { stallHealthQueries } from './postgres-proxy'
 
 test('restricted runtime can vote, read history and preserve data across restart', async () => {
   const databaseUrl = process.env.TEST_DATABASE_URL
@@ -24,11 +25,11 @@ test('restricted runtime can vote, read history and preserve data across restart
   let server: ReturnType<typeof Bun.spawn> | undefined
   const base = 'http://127.0.0.1:3100'
 
-  const start = async () => {
+  const start = async (database = runtimeUrl.toString()) => {
     server = Bun.spawn([process.execPath, 'server/index.ts'], {
       env: {
         ...environment,
-        DATABASE_URL: runtimeUrl.toString(),
+        DATABASE_URL: database,
         PORT: '3100',
         OFFICE_TRACKER_REVISION: revision
       },
@@ -44,7 +45,14 @@ test('restricted runtime can vote, read history and preserve data across restart
       }
       await Bun.sleep(100)
     }
-    throw new Error('API did not become ready')
+    const failed = server
+    await stop()
+    throw new Error(
+      'API did not become ready: ' +
+        (await new Response(
+          failed?.stderr as ReadableStream | undefined
+        ).text())
+    )
   }
   const stop = async () => {
     server?.kill()
@@ -114,6 +122,62 @@ test('restricted runtime can vote, read history and preserve data across restart
     const response = await fetch(`${base}/api/votes/current`)
     expect(response.headers.get('X-Office-Tracker-Revision')).toBe(revision)
     expect(response.headers.get('Cache-Control')).toBe('no-store')
+    await owner.begin(async (lock) => {
+      await lock`LOCK TABLE votes IN ACCESS EXCLUSIVE MODE`
+      const probes = await Promise.all(
+        Array.from({ length: 8 }, () =>
+          fetch(`${base}/healthz`, { signal: AbortSignal.timeout(4500) })
+        )
+      )
+      for (const probe of probes) {
+        expect(probe.status).toBe(503)
+        expect(await probe.json()).toEqual({ ok: false })
+        expect(probe.headers.get('Cache-Control')).toBe('no-store')
+        expect(probe.headers.get('X-Office-Tracker-Revision')).toBe(revision)
+      }
+      const deadline = Date.now() + 1500
+      for (;;) {
+        const [activity] =
+          await owner`SELECT count(*)::int AS active FROM pg_stat_activity
+          WHERE datname = current_database() AND usename = 'office_tracker_test_runtime'
+          AND state = 'active' AND query ILIKE '%SELECT id FROM votes LIMIT 0%'`
+        if (activity.active === 0) break
+        if (Date.now() > deadline)
+          throw new Error('Health probe SQL outlived its deadline')
+        await Bun.sleep(25)
+      }
+    })
+    expect((await fetch(`${base}/healthz`)).status).toBe(200)
+    await stop()
+    const proxy = await stallHealthQueries(
+      runtimeUrl.toString(),
+      /^SELECT id FROM votes LIMIT 0$/i
+    )
+    try {
+      // Let startup's own table check through, then stall new health probes.
+      proxy.allowNewConnections()
+      await start(proxy.url)
+      proxy.stall()
+      const probes = await Promise.all(
+        Array.from({ length: 8 }, () => fetch(`${base}/healthz`))
+      )
+      for (const probe of probes) {
+        expect(probe.status).toBe(503)
+        expect(await probe.json()).toEqual({ ok: false })
+      }
+      expect((await fetch(`${base}/api/votes/current`)).status).toBe(200)
+      proxy.allowNewConnections()
+      expect((await fetch(`${base}/healthz`)).status).toBe(200)
+      const deadline = Date.now() + 1000
+      while (proxy.stalledConnections && Date.now() < deadline)
+        await Bun.sleep(10)
+      expect(proxy.stalledConnections).toBe(0)
+    } finally {
+      await stop()
+      await proxy.close()
+    }
+    await start()
+
     const html = await (await fetch(base)).text()
     const assets = [...html.matchAll(/(?:src|href)="([^"]+\.(?:js|css))"/g)]
     expect(assets.length).toBeGreaterThanOrEqual(2)
