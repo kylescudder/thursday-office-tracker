@@ -1,4 +1,4 @@
-import { url } from '../server/database-url'
+import { url } from '../src/server/database-url'
 import { createDeploymentDatabase } from './database'
 
 const sql = createDeploymentDatabase(url.toString())
@@ -17,14 +17,25 @@ async function request(path: string, status = 200, init?: RequestInit) {
   return response
 }
 
+// tRPC over HTTP: queries are GETs, mutations POST their input as JSON.
+const query = async <T>(procedure: string) =>
+  (
+    (await (await request(`/api/trpc/${procedure}`)).json()) as {
+      result: { data: T }
+    }
+  ).result.data
+const mutate = async (procedure: string, input: unknown, status = 200) =>
+  request(`/api/trpc/${procedure}`, status, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(input)
+  })
 const vote = async (option: string) =>
-  (await (
-    await request('/api/votes', 200, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, option })
-    })
-  ).json()) as { id: number }
+  (
+    (await (await mutate('votes.add', { name, option })).json()) as {
+      result: { data: { id: number } }
+    }
+  ).result.data
 
 try {
   const [permissions] = await sql`
@@ -68,7 +79,7 @@ try {
     )
       throw new Error('Built asset has an unexpected content type')
   }
-  const current = await request('/api/votes/current')
+  const current = await request('/api/trpc/votes.current')
   if (
     current.headers.get('X-Office-Tracker-Revision') !==
       process.env.OFFICE_TRACKER_REVISION ||
@@ -80,25 +91,15 @@ try {
   const updated = await vote('could-be-convinced')
   if (updated.id !== created.id)
     throw new Error('Vote update created a duplicate')
-  const votes = (await (await request('/api/votes/current')).json()) as Vote[]
+  const votes = await query<Vote[]>('votes.current')
   const matches = votes.filter((entry) => entry.name === name)
   if (matches.length !== 1 || matches[0].option !== 'could-be-convinced')
     throw new Error('Vote was not stored correctly')
-  const history = (await (await request('/api/votes/history')).json()) as {
-    votes: Vote[]
-  }[]
+  const history = await query<{ votes: Vote[] }[]>('votes.history')
   if (!history.some((week) => week.votes.some((entry) => entry.name === name)))
     throw new Error('Vote history is missing the submission')
-  await request('/api/votes', 400, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ name, option: 'invalid' })
-  })
-  await request('/api/votes', 204, {
-    method: 'DELETE',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ name })
-  })
+  await mutate('votes.add', { name, option: 'invalid' }, 400)
+  await mutate('votes.remove', { name })
   const [remaining] =
     await sql`SELECT count(*)::int AS count FROM votes WHERE name = ${name}`
   if (remaining.count !== 0) throw new Error('Vote deletion did not persist')

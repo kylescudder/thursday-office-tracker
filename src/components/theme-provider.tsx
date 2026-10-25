@@ -26,8 +26,12 @@ export function ThemeProvider({
   storageKey = 'vite-ui-theme',
   ...props
 }: ThemeProviderProps) {
+  // The server render has no storage; the toggle's markup doesn't depend on it.
   const [theme, setTheme] = useState<Theme>(
-    () => (localStorage.getItem(storageKey) as Theme) || defaultTheme
+    () =>
+      (typeof window !== 'undefined' &&
+        (localStorage.getItem(storageKey) as Theme)) ||
+      defaultTheme
   )
 
   useEffect(() => {

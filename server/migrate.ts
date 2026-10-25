@@ -1,7 +1,7 @@
 import { drizzle } from 'drizzle-orm/postgres-js'
 import { migrate } from 'drizzle-orm/postgres-js/migrator'
 import postgres from 'postgres'
-import { url } from './database-url'
+import { url } from '../src/server/database-url'
 
 // Runs with the owner role only; the app runtime role cannot create tables.
 // The journal lives in its own schema, where the runtime role has no access.

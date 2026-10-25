@@ -19,7 +19,8 @@ ENV OFFICE_TRACKER_REVISION=${OFFICE_TRACKER_REVISION}
 COPY --from=production-dependencies --chown=bun:bun /app/node_modules ./node_modules
 COPY --from=build --chown=bun:bun /app/dist ./dist
 COPY --chown=bun:bun drizzle ./drizzle
-COPY --chown=bun:bun server/database-url.ts server/database.ts server/schema.ts server/health.ts server/index.ts server/migrate.ts ./server/
+COPY --chown=bun:bun server/index.ts server/migrate.ts ./server/
+COPY --chown=bun:bun src/server ./src/server
 COPY --chown=bun:bun deploy/verify.ts deploy/database.ts ./deploy/
 USER bun
 EXPOSE 3000

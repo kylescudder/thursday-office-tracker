@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { api, type VoteOption } from '@/lib/api'
+import { useTRPC } from '@/lib/trpc'
+import type { VoteOption } from '@/server/votes'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -21,26 +22,22 @@ const Index = () => {
   )
 
   // Queries poll so everyone sees new votes without refreshing
+  const trpc = useTRPC()
   const queryClient = useQueryClient()
-  const { data: currentWeekVotesRaw } = useQuery({
-    queryKey: ['votes', 'current'],
-    queryFn: api.getCurrentWeekVotes,
-    refetchInterval: 5000
-  })
-  const { data: weekHistoryRaw } = useQuery({
-    queryKey: ['votes', 'history'],
-    queryFn: api.getVoteHistory,
-    refetchInterval: 30000
-  })
-  const onSuccess = () => queryClient.invalidateQueries({ queryKey: ['votes'] })
-  const { mutateAsync: addVote } = useMutation({
-    mutationFn: api.addVote,
-    onSuccess
-  })
-  const { mutateAsync: deleteVote } = useMutation({
-    mutationFn: api.deleteVote,
-    onSuccess
-  })
+  const { data: currentWeekVotesRaw } = useQuery(
+    trpc.votes.current.queryOptions(undefined, { refetchInterval: 5000 })
+  )
+  const { data: weekHistoryRaw } = useQuery(
+    trpc.votes.history.queryOptions(undefined, { refetchInterval: 30000 })
+  )
+  const onSuccess = () =>
+    queryClient.invalidateQueries({ queryKey: trpc.votes.pathKey() })
+  const { mutateAsync: addVote } = useMutation(
+    trpc.votes.add.mutationOptions({ onSuccess })
+  )
+  const { mutateAsync: deleteVote } = useMutation(
+    trpc.votes.remove.mutationOptions({ onSuccess })
+  )
 
   // Convert timestamps to Date objects
   const currentWeekVotes = useMemo(() => {
