@@ -14,7 +14,7 @@ LABEL org.opencontainers.image.source="https://github.com/kylescudder/thursday-o
 ENV NODE_ENV=production PORT=3000 TZ=Europe/London
 ENV OFFICE_TRACKER_REVISION=${OFFICE_TRACKER_REVISION}
 COPY --from=build --chown=bun:bun /app/dist ./dist
-COPY --chown=bun:bun server/database.ts server/index.ts server/migrate.ts ./server/
+COPY --chown=bun:bun server/database.ts server/health.ts server/index.ts server/migrate.ts ./server/
 COPY --chown=bun:bun deploy/verify.ts ./deploy/
 USER bun
 EXPOSE 3000
