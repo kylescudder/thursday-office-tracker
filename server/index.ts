@@ -1,4 +1,6 @@
-import { sql, url } from './database'
+import { asc, and, desc, eq } from 'drizzle-orm'
+import { db, sql, url } from './database'
+import { votes } from './schema'
 import { createHealthCheck } from './health'
 import path from 'path'
 
@@ -28,39 +30,31 @@ function getWeekStart(date: Date): number {
   return d.getTime()
 }
 
-type VoteRow = {
-  id: number
-  name: string
-  option: VoteOption
-  week_start: string
-  timestamp: string
-}
-
 // Get current week's votes
 async function getCurrentWeekVotes() {
   const weekStart = getWeekStart(new Date())
-  const votes: VoteRow[] = await sql`
-    SELECT * FROM votes WHERE week_start = ${weekStart} ORDER BY timestamp
-  `
-
-  return votes.map((vote) => ({
-    id: vote.id,
-    name: vote.name,
-    option: vote.option,
-    timestamp: Number(vote.timestamp)
-  }))
+  return db
+    .select({
+      id: votes.id,
+      name: votes.name,
+      option: votes.option,
+      timestamp: votes.timestamp
+    })
+    .from(votes)
+    .where(eq(votes.weekStart, weekStart))
+    .orderBy(asc(votes.timestamp))
 }
 
 // Get all votes grouped by week (newest first)
 async function getVoteHistory() {
-  const allVotes: VoteRow[] = await sql`
-    SELECT * FROM votes ORDER BY week_start DESC, timestamp
-  `
+  const allVotes = await db
+    .select()
+    .from(votes)
+    .orderBy(desc(votes.weekStart), asc(votes.timestamp))
 
-  const weekMap = new Map<number, VoteRow[]>()
+  const weekMap = new Map<number, typeof allVotes>()
   for (const vote of allVotes) {
-    const weekStart = Number(vote.week_start)
-    weekMap.set(weekStart, [...(weekMap.get(weekStart) || []), vote])
+    weekMap.set(vote.weekStart, [...(weekMap.get(vote.weekStart) || []), vote])
   }
 
   return Array.from(weekMap.entries()).map(([weekStart, votes]) => ({
@@ -68,7 +62,7 @@ async function getVoteHistory() {
     votes: votes.map((v) => ({
       name: v.name,
       option: v.option,
-      timestamp: Number(v.timestamp)
+      timestamp: v.timestamp
     }))
   }))
 }
@@ -76,20 +70,28 @@ async function getVoteHistory() {
 // Add a new vote, or update the user's existing vote for this week
 async function addVote(name: string, option: VoteOption) {
   const now = new Date()
-  const [vote] = await sql`
-    INSERT INTO votes (name, option, week_start, timestamp)
-    VALUES (${name}, ${option}, ${getWeekStart(now)}, ${now.getTime()})
-    ON CONFLICT (week_start, name)
-    DO UPDATE SET option = EXCLUDED.option, timestamp = EXCLUDED.timestamp
-    RETURNING id
-  `
-  return vote.id as number
+  const [vote] = await db
+    .insert(votes)
+    .values({
+      name,
+      option,
+      weekStart: getWeekStart(now),
+      timestamp: now.getTime()
+    })
+    .onConflictDoUpdate({
+      target: [votes.weekStart, votes.name],
+      set: { option, timestamp: now.getTime() }
+    })
+    .returning({ id: votes.id })
+  return vote!.id
 }
 
 // Delete a vote (for changing vote)
 async function deleteVote(name: string) {
   const weekStart = getWeekStart(new Date())
-  await sql`DELETE FROM votes WHERE week_start = ${weekStart} AND name = ${name}`
+  await db
+    .delete(votes)
+    .where(and(eq(votes.weekStart, weekStart), eq(votes.name, name)))
 }
 
 const distDir = path.resolve(import.meta.dir, '../dist')
