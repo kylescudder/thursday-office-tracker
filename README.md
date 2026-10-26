@@ -35,3 +35,11 @@ GitHub holds deployment credentials only; database credentials stay on the host.
 
 See [the deployment guide](deploy/README.md) for configuration, migration,
 release verification and rollback. The former Netlify project has been removed.
+
+## Runtime configuration
+
+Server settings are validated with `@t3-oss/env-core` and Zod when they are read.
+Production builds need no runtime credentials. Invalid settings report their names
+without logging secret values; see `.env.example` for the deployment settings.
+Migration commands validate database settings independently of Clerk configuration.
+`DATABASE_PASSWORD_FILE` remains supported for Docker secrets.
