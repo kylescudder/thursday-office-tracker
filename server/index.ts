@@ -3,7 +3,10 @@ import postgres from 'postgres'
 import { url } from '../src/server/database-url'
 import { createHealthCheck } from '../src/server/health'
 
-const revision = process.env.OFFICE_TRACKER_REVISION || 'development'
+import { readEnv } from '../src/server/env'
+
+const env = readEnv()
+const revision = env.OFFICE_TRACKER_REVISION
 
 // Fail before accepting traffic if the database or migration is unavailable.
 const startup = postgres(url.toString(), { max: 1, onnotice: () => {} })
@@ -36,7 +39,7 @@ async function staticFile(pathname: string) {
 
 const server = Bun.serve({
   hostname: '0.0.0.0',
-  port: Number(process.env.PORT || 3000),
+  port: env.PORT,
   async fetch(request) {
     const { pathname } = new URL(request.url)
     const response =
