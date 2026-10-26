@@ -1,5 +1,5 @@
 import { expect, test } from 'bun:test'
-import { SQL } from 'bun'
+import postgres from 'postgres'
 import { stallHealthQueries } from './postgres-proxy'
 
 test('restricted runtime can vote, read history and preserve data across restart', async () => {
@@ -12,7 +12,7 @@ test('restricted runtime can vote, read history and preserve data across restart
       'TEST_DATABASE_URL must name the isolated office_tracker_test database'
     )
   }
-  const owner = new SQL(databaseUrl, { max: 2 })
+  const owner = postgres(databaseUrl, { max: 2, onnotice: () => {} })
   const runtimeUrl = new URL(databaseUrl)
   runtimeUrl.username = 'office_tracker_test_runtime'
   const name = `ci-${crypto.randomUUID()}`
@@ -81,19 +81,28 @@ test('restricted runtime can vote, read history and preserve data across restart
       END IF;
     END $$`)
     await owner`ALTER ROLE office_tracker_test_runtime CONNECTION LIMIT 8`
-    const migrate = Bun.spawn([process.execPath, 'server/migrate.ts'], {
-      env: environment,
-      stdout: 'pipe',
-      stderr: 'pipe'
-    })
-    expect(await migrate.exited).toBe(0)
+    // Migrations are repeatable: the second run must be a no-op.
+    for (let run = 0; run < 2; run++) {
+      const migrate = Bun.spawn([process.execPath, 'server/migrate.ts'], {
+        env: environment,
+        stdout: 'pipe',
+        stderr: 'pipe'
+      })
+      expect(await migrate.exited).toBe(0)
+    }
+    const [journal] =
+      await owner`SELECT count(*)::int AS applied FROM drizzle.__drizzle_migrations`
+    expect(journal.applied).toBe(1)
     await owner.unsafe(`
       GRANT CONNECT ON DATABASE office_tracker_test TO office_tracker_test_runtime;
       GRANT USAGE ON SCHEMA public TO office_tracker_test_runtime;
       GRANT SELECT, INSERT, UPDATE, DELETE ON votes TO office_tracker_test_runtime;
       GRANT USAGE, SELECT ON SEQUENCE votes_id_seq TO office_tracker_test_runtime;
     `)
-    const runtime = new SQL(runtimeUrl.toString(), { max: 1 })
+    const runtime = postgres(runtimeUrl.toString(), {
+      max: 1,
+      onnotice: () => {}
+    })
     try {
       const [permissions] = await runtime`
         SELECT current_user AS role,
@@ -101,8 +110,12 @@ test('restricted runtime can vote, read history and preserve data across restart
       `
       expect(permissions.role).toBe('office_tracker_test_runtime')
       expect(permissions.can_create).toBe(false)
+      // The migration journal is out of the runtime role's reach.
+      await expect(
+        runtime`SELECT hash FROM drizzle.__drizzle_migrations`
+      ).rejects.toMatchObject({ code: '42501' })
     } finally {
-      await runtime.close()
+      await runtime.end({ timeout: 1 })
     }
 
     await start()
@@ -118,7 +131,7 @@ test('restricted runtime can vote, read history and preserve data across restart
         const [activity] = await owner`SELECT count(*)::int AS active
           FROM pg_stat_activity WHERE datname = current_database()
           AND usename = 'office_tracker_test_runtime' AND state = 'active'
-          AND query ILIKE '%SELECT * FROM votes WHERE week_start%'`
+          AND query ILIKE '%from "votes" where "votes"."week_start"%'`
         if (activity.active === 4) break
         if (Date.now() > deadline) throw new Error('App pool did not fill')
         await Bun.sleep(25)
@@ -258,6 +271,6 @@ test('restricted runtime can vote, read history and preserve data across restart
   } finally {
     await stop()
     await owner`DELETE FROM votes WHERE name = ${name}`
-    await owner.close()
+    await owner.end({ timeout: 1 })
   }
 }, 30000)

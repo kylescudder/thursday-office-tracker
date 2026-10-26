@@ -1,4 +1,4 @@
-import { url } from '../server/database'
+import { url } from '../server/database-url'
 import { createDeploymentDatabase } from './database'
 
 const sql = createDeploymentDatabase(url.toString())
@@ -110,6 +110,6 @@ try {
     // Remove only this run's unique fixture, including after an API check fails.
     await sql`DELETE FROM votes WHERE name = ${name}`
   } finally {
-    await sql.close()
+    await sql.end({ timeout: 1 })
   }
 }

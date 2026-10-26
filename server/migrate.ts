@@ -1,17 +1,18 @@
-import { sql } from './database'
+import { drizzle } from 'drizzle-orm/postgres-js'
+import { migrate } from 'drizzle-orm/postgres-js/migrator'
+import postgres from 'postgres'
+import { url } from './database-url'
 
+// Runs with the owner role only; the app runtime role cannot create tables.
+// The journal lives in its own schema, where the runtime role has no access.
+const sql = postgres(url.toString(), { max: 1, onnotice: () => {} })
 try {
-  await sql`
-    CREATE TABLE IF NOT EXISTS votes (
-      id SERIAL PRIMARY KEY,
-      name TEXT NOT NULL,
-      option TEXT NOT NULL CHECK (option IN ('yes', 'no', 'could-be-convinced')),
-      week_start BIGINT NOT NULL,
-      timestamp BIGINT NOT NULL,
-      UNIQUE (week_start, name)
-    )
-  `
+  await migrate(drizzle(sql), {
+    migrationsFolder: new URL('../drizzle', import.meta.url).pathname,
+    migrationsSchema: 'drizzle',
+    migrationsTable: '__drizzle_migrations'
+  })
   console.log('Vote schema is ready')
 } finally {
-  await sql.close()
+  await sql.end()
 }

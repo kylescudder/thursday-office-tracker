@@ -1,18 +1,15 @@
-import { SQL } from 'bun'
+import { drizzle } from 'drizzle-orm/postgres-js'
+import postgres from 'postgres'
+import { url } from './database-url'
+import * as schema from './schema'
 
-if (!process.env.DATABASE_URL) {
-  throw new Error('DATABASE_URL is required')
-}
+export { url }
 
-export const url = new URL(process.env.DATABASE_URL)
-if (process.env.DATABASE_PASSWORD_FILE) {
-  url.password = (
-    await Bun.file(process.env.DATABASE_PASSWORD_FILE).text()
-  ).trim()
-}
-
-export const sql = new SQL(url.toString(), {
+export const sql = postgres(url.toString(), {
   max: 4,
-  idleTimeout: 20,
-  connectionTimeout: 10
+  idle_timeout: 20,
+  connect_timeout: 10,
+  onnotice: () => {}
 })
+
+export const db = drizzle(sql, { schema })

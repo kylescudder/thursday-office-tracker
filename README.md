@@ -10,7 +10,7 @@ The app is a Vite frontend plus a small Bun API server (`server/index.ts`) backe
 ```sh
 cp .env.example .env   # set DATABASE_URL
 bun install
-bun run db:migrate     # create the votes table
+bun run db:migrate     # apply Drizzle migrations from drizzle/
 bun run dev:server     # API on :3000
 bun run dev            # frontend on :8080, proxies /api to :3000
 ```
@@ -21,7 +21,8 @@ See [host deployment guide](deploy/README.md) for the container, database and re
 ## Stack
 
 Vite, React, TypeScript, shadcn/ui and Tailwind CSS on the frontend; a Bun API server
-with PostgreSQL behind it.
+with PostgreSQL through [Drizzle](https://orm.drizzle.team). The schema is in
+`server/schema.ts`; run `bun run db:generate` after changing it.
 
 ## How can I deploy this project?
 

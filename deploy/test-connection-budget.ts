@@ -1,11 +1,11 @@
 import assert from 'node:assert/strict'
 import { randomUUID } from 'node:crypto'
 import { createDeploymentDatabase } from './database'
-import { SQL } from 'bun'
+import postgres from 'postgres'
 function connect(url: string, max: number) {
-  return adapt(new SQL(url, { max, connectionTimeout: 3 }))
+  return adapt(postgres(url, { max, connect_timeout: 3, onnotice: () => {} }))
 }
-function adapt(pool: SQL): Client {
+function adapt(pool: postgres.Sql): Client {
   return {
     query: async (text) => pool.unsafe(text),
     reserve: async () => {
@@ -18,7 +18,7 @@ function adapt(pool: SQL): Client {
       }
     },
     close: async () => {
-      await pool.close({ timeout: 1 })
+      await pool.end({ timeout: 1 })
     }
   }
 }
