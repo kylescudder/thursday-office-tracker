@@ -30,7 +30,7 @@ acknowledges the same commit and image digest after completed acceptance checks.
 - Deployer: the centrally installed service; application behavior lives in `hooks.py`.
 - Image: `ghcr.io/kylescudder/thursday-office-tracker@sha256:<digest>`.
 
-The Vite frontend and Bun API share one non-root container on `platform-web`
+The TanStack Start app and its tRPC API share one non-root container on `platform-web`
 and internal `platform-db`, with no host ports. Its read-only filesystem,
 128 MiB / 0.5 CPU limit, bounded logs and four-connection pool remain in place.
 Weeks use `Europe/London`. Voting keeps its existing open, name-based model.

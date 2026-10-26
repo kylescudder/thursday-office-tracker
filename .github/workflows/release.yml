@@ -132,7 +132,7 @@ jobs:
       cancel-in-progress: false
     env:
       DEPLOY_URL: https://deploy-office.kylescudder.co.uk/hooks/office-tracker
-      HEALTH_URL: ${{ vars.OFFICE_BASE_URL }}/api/votes/current
+      HEALTH_URL: ${{ vars.OFFICE_BASE_URL }}/healthz
     steps:
       - name: Check deploy endpoint protection
         env:
