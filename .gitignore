@@ -32,3 +32,5 @@ state/
 backups/
 deploy-spool/
 __pycache__/
+playwright-report/
+test-results/
