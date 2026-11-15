@@ -4,6 +4,8 @@ import { defineConfig, devices } from '@playwright/test'
 // this suite. The app is served from the production build, as in Docker.
 const port = Number(process.env.E2E_PORT ?? 4173)
 const baseURL = `http://127.0.0.1:${port}`
+// E2E_EVIDENCE=1 keeps a screenshot and video of every test, for PR evidence.
+const evidence = process.env.E2E_EVIDENCE === '1'
 
 export default defineConfig({
   testDir: 'e2e',
@@ -17,21 +19,27 @@ export default defineConfig({
   outputDir: 'test-results',
   reporter: [
     ['list'],
-    ['html', { outputFolder: 'playwright-report', open: 'never' }]
+    ['html', { outputFolder: 'playwright-report', open: 'never' }],
+    ...(evidence
+      ? [['json', { outputFile: 'test-results/results.json' }] as const]
+      : [])
   ],
   use: {
     baseURL,
     locale: 'en-US',
     timezoneId: 'Europe/London',
     trace: 'retain-on-failure',
-    screenshot: 'only-on-failure'
+    screenshot: evidence ? 'on' : 'only-on-failure'
   },
   projects: [
     {
       name: 'desktop',
       use: {
         ...devices['Desktop Chrome'],
-        viewport: { width: 1280, height: 800 }
+        viewport: { width: 1280, height: 800 },
+        ...(evidence
+          ? { video: { mode: 'on', size: { width: 1280, height: 800 } } }
+          : {})
       }
     },
     {
@@ -41,7 +49,10 @@ export default defineConfig({
         ...devices['Desktop Chrome'],
         viewport: { width: 390, height: 844 },
         isMobile: true,
-        hasTouch: true
+        hasTouch: true,
+        ...(evidence
+          ? { video: { mode: 'on', size: { width: 390, height: 844 } } }
+          : {})
       }
     }
   ],
