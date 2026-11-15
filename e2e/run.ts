@@ -1,7 +1,7 @@
 // Runs the browser suite against a throwaway Postgres cluster and the production build.
 // Set E2E_DATABASE_URL to reuse an existing disposable local database (name ending in _e2e or _test).
 import { spawn } from 'node:child_process'
-import { existsSync, openSync, readFileSync } from 'node:fs'
+import { existsSync } from 'node:fs'
 import { mkdtemp, rm } from 'node:fs/promises'
 import { createServer } from 'node:net'
 import { tmpdir } from 'node:os'
@@ -69,7 +69,6 @@ async function startCluster() {
   const bin = postgresBinDir()
   const dataRoot = await mkdtemp(join(tmpdir(), 'office-tracker-e2e-'))
   const dataDir = join(dataRoot, 'data')
-  const logPath = join(dataRoot, 'postgres.log')
   const port = await freePort()
   // Homebrew's postgres refuses to start without a valid locale in the environment.
   const env = { ...process.env, LC_ALL: process.env.LC_ALL || 'en_US.UTF-8' }
@@ -81,7 +80,11 @@ async function startCluster() {
   )
   if (initdb !== 0) throw new Error('initdb failed')
 
-  const log = openSync(logPath, 'a')
+  // The server's recent output, kept in memory for the startup error.
+  let serverOutput = ''
+  const keepOutput = (chunk: Buffer) => {
+    serverOutput = (serverOutput + chunk.toString()).slice(-4000)
+  }
   const server = spawn(
     join(bin, 'postgres'),
     [
@@ -94,8 +97,10 @@ async function startCluster() {
       '-c',
       'unix_socket_directories='
     ],
-    { env, stdio: ['ignore', log, log] }
+    { env, stdio: ['ignore', 'pipe', 'pipe'] }
   )
+  server.stdout.on('data', keepOutput)
+  server.stderr.on('data', keepOutput)
   const exited = new Promise<void>((resolve) =>
     server.once('exit', () => resolve())
   )
@@ -122,9 +127,7 @@ async function startCluster() {
   } catch {
     server.kill('SIGINT')
     await exited
-    throw new Error(
-      `PostgreSQL did not start: ${readFileSync(logPath, 'utf8').slice(-800)}`
-    )
+    throw new Error(`PostgreSQL did not start: ${serverOutput.slice(-800)}`)
   } finally {
     await admin.end({ timeout: 1 })
   }
