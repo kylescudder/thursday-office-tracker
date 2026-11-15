@@ -11,3 +11,13 @@ test.beforeEach(async () => {
     throw new Error('E2E_DATABASE_URL is not set; run bun run test:e2e')
   await resetCurrentWeekVotes(databaseUrl)
 })
+
+// Evidence runs only: after a test's assertions, capture its settled final state
+// with animations finished and the pointer away from the controls.
+test.afterEach(async ({ page }, testInfo) => {
+  if (process.env.E2E_EVIDENCE !== '1') return
+  await page.mouse.move(0, 0)
+  const path = testInfo.outputPath('final-state.png')
+  await page.screenshot({ path, animations: 'disabled' })
+  await testInfo.attach('final-state', { path, contentType: 'image/png' })
+})
