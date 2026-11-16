@@ -5,7 +5,11 @@ import { url } from '../src/server/database-url'
 
 // Runs with the owner role only; the app runtime role cannot create tables.
 // The journal lives in its own schema, where the runtime role has no access.
-const sql = postgres(url.toString(), { max: 1, onnotice: () => {} })
+const sql = postgres(url.toString(), {
+  max: 1,
+  connect_timeout: 2,
+  onnotice: () => {}
+})
 try {
   await migrate(drizzle(sql), {
     migrationsFolder: new URL('../drizzle', import.meta.url).pathname,

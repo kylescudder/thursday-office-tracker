@@ -25,7 +25,11 @@ const PREVIOUS_WEEKS = [
 const SEEDED_WEEK_STARTS = PREVIOUS_WEEKS.map((week) => week.weekStart)
 
 export async function seedVotes(databaseUrl: string) {
-  const sql = postgres(databaseUrl, { max: 1, onnotice: () => {} })
+  const sql = postgres(databaseUrl, {
+    max: 1,
+    connect_timeout: 2,
+    onnotice: () => {}
+  })
   try {
     for (const week of PREVIOUS_WEEKS) {
       for (const [index, [name, option]] of week.votes.entries()) {
@@ -44,7 +48,11 @@ export async function seedVotes(databaseUrl: string) {
 // Removes every vote outside the seeded history, so each test starts with an
 // empty current week. The browser projects share one database.
 export async function resetCurrentWeekVotes(databaseUrl: string) {
-  const sql = postgres(databaseUrl, { max: 1, onnotice: () => {} })
+  const sql = postgres(databaseUrl, {
+    max: 1,
+    connect_timeout: 2,
+    onnotice: () => {}
+  })
   try {
     await sql`DELETE FROM votes WHERE week_start NOT IN ${sql(SEEDED_WEEK_STARTS)}`
   } finally {
