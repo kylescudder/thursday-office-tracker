@@ -12,7 +12,11 @@ test('restricted runtime can vote, read history and preserve data across restart
       'TEST_DATABASE_URL must name the isolated office_tracker_test database'
     )
   }
-  const owner = postgres(databaseUrl, { max: 2, onnotice: () => {} })
+  const owner = postgres(databaseUrl, {
+    max: 2,
+    connect_timeout: 2,
+    onnotice: () => {}
+  })
   const runtimeUrl = new URL(databaseUrl)
   runtimeUrl.username = 'office_tracker_test_runtime'
   const name = `ci-${crypto.randomUUID()}`
@@ -103,6 +107,7 @@ test('restricted runtime can vote, read history and preserve data across restart
     `)
     const runtime = postgres(runtimeUrl.toString(), {
       max: 1,
+      connect_timeout: 2,
       onnotice: () => {}
     })
     try {

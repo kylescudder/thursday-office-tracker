@@ -9,7 +9,11 @@ const env = readEnv()
 const revision = env.OFFICE_TRACKER_REVISION
 
 // Fail before accepting traffic if the database or migration is unavailable.
-const startup = postgres(url.toString(), { max: 1, onnotice: () => {} })
+const startup = postgres(url.toString(), {
+  max: 1,
+  connect_timeout: 2,
+  onnotice: () => {}
+})
 await startup`SELECT id FROM votes LIMIT 0`
 await startup.end()
 

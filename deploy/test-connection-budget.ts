@@ -3,7 +3,7 @@ import { randomUUID } from 'node:crypto'
 import { createDeploymentDatabase } from './database'
 import postgres from 'postgres'
 function connect(url: string, max: number) {
-  return adapt(postgres(url, { max, connect_timeout: 3, onnotice: () => {} }))
+  return adapt(postgres(url, { max, connect_timeout: 2, onnotice: () => {} }))
 }
 function adapt(pool: postgres.Sql): Client {
   return {
@@ -88,16 +88,27 @@ async function checkBudget() {
       await connection.query('SELECT 1')
     }
     let rejected = false
+    const started = performance.now()
     try {
       await overflow.query('SELECT 1')
     } catch (error) {
       const value = error as { code?: string; errno?: string }
       rejected = value.code === '53300' || value.errno === '53300'
     }
+    const elapsed = performance.now() - started
     assert.equal(
       rejected,
       true,
       'The ninth connection must hit the real role limit'
+    )
+    // postgres.js v4 retries 53300 until connect_timeout (2 s here) has passed.
+    // A longer timeout would leave requests hanging during a connection-limit blip.
+    assert.ok(
+      elapsed < 5000,
+      `A refused connection must fail fast, took ${Math.round(elapsed)} ms`
+    )
+    console.log(
+      `Ninth connection rejected with 53300 in ${Math.round(elapsed)} ms`
     )
   } finally {
     await Promise.all(held.map((connection) => connection.release()))

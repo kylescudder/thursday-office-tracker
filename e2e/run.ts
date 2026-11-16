@@ -111,6 +111,7 @@ async function startCluster() {
     username: owner,
     database: 'postgres',
     max: 1,
+    connect_timeout: 2,
     onnotice: () => {}
   })
   try {
