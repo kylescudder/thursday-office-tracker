@@ -26,18 +26,7 @@ services:
       platform-web:
         aliases: [office-tracker]
       platform-db: {}
-    healthcheck:
-      test:
-        [
-          CMD,
-          bun,
-          -e,
-          "const r = await fetch('http://127.0.0.1:3000/healthz'); if (!r.ok || !(await r.json()).ok) process.exit(1)"
-        ]
-      interval: 15s
-      timeout: 10s
-      retries: 3
-      start_period: 10s
+    # Inherit the health check shipped with the application image.
     logging:
       driver: json-file
       options:
